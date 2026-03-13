@@ -97,7 +97,6 @@ export function SpreadChart({ hours = 10, spreadLevels }: SpreadChartProps) {
     const priceLines: { pl: ReturnType<typeof lineSeries.createPriceLine> }[] = [];
     if (spreadLevels) {
       priceLines.push({ pl: lineSeries.createPriceLine({ price: spreadLevels.entry, color: "#f59e0b", lineWidth: 2, lineStyle: 2 }) });
-      if (spreadLevels.tp != null) priceLines.push({ pl: lineSeries.createPriceLine({ price: spreadLevels.tp, color: "#22c55e", lineWidth: 2, lineStyle: 2 }) });
       if (spreadLevels.sl != null) priceLines.push({ pl: lineSeries.createPriceLine({ price: spreadLevels.sl, color: "#ef4444", lineWidth: 2, lineStyle: 2 }) });
     }
     drawings.forEach((d) => {

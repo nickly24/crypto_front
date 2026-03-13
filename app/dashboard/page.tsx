@@ -62,6 +62,7 @@ type BotStatusData = {
     short_basket?: string | null;
     buy_basket?: string | null;
     sell_basket?: string | null;
+    positions_data?: string | Record<string, { side?: string; qty?: number; avg_price?: number; upl?: number }> | null;
     entry_spread_pct?: number | string | null;
     entry_time?: string | null;
     connection_status?: string;
@@ -132,6 +133,7 @@ export default function DashboardPage() {
   const [botActionLoading, setBotActionLoading] = useState(false);
   const [botActionLabel, setBotActionLabel] = useState<string | null>(null);
   const [spreadHistory, setSpreadHistory] = useState<Array<{ t: string; v: number }>>([]);
+  const [pnlHistory, setPnlHistory] = useState<Array<{ t: string; v: number }>>([]);
 
   function fetchConfig() {
     getBotConfig().then((r) => {
@@ -159,6 +161,19 @@ export default function DashboardPage() {
             const next = [...prev, { t: now, v }];
             return next.length > 60 ? next.slice(-60) : next;
           });
+        }
+        if (d.db_state?.position_open === 1) {
+          const pnlVal = d.db_state?.pnl_total_pct;
+          if (pnlVal != null) {
+            const p = num(pnlVal);
+            setPnlHistory((prev) => {
+              const now = new Date().toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+              const next = [...prev, { t: now, v: p }];
+              return next.length > 60 ? next.slice(-60) : next;
+            });
+          }
+        } else {
+          setPnlHistory([]);
         }
       }
     });
@@ -292,6 +307,42 @@ export default function DashboardPage() {
     }).sort((a, b) => a.symbol.localeCompare(b.symbol));
   }, [quotes, refPrices]);
 
+  const positionsBreakdown = useMemo(() => {
+    if (!positionOpen || !config?.baskets?.length || !ds?.positions_data) return null;
+    let positions: Record<string, { side?: string; qty?: number; avg_price?: number; upl?: number }> = {};
+    try {
+      const raw = ds.positions_data;
+      positions = typeof raw === "string" ? JSON.parse(raw) : raw || {};
+    } catch {
+      return null;
+    }
+    const entries = Object.entries(positions);
+    if (entries.length === 0) return null;
+    const longSyms = new Set(
+      (ds.long_basket === "basket2" ? config.baskets.map((b) => b.basket2) : config.baskets.map((b) => b.basket1))
+    );
+    const shortSyms = new Set(
+      (ds.short_basket === "basket2" ? config.baskets.map((b) => b.basket2) : config.baskets.map((b) => b.basket1))
+    );
+    const longItems: Array<{ instId: string; shortName: string; upl: number }> = [];
+    const shortItems: Array<{ instId: string; shortName: string; upl: number }> = [];
+    let longTotal = 0;
+    let shortTotal = 0;
+    for (const [instId, p] of entries) {
+      const upl = num(p?.upl ?? 0);
+      const side = longSyms.has(instId) ? "long" : "short";
+      const shortName = instId.replace("-USDT-SWAP", "");
+      if (side === "long") {
+        longTotal += upl;
+        longItems.push({ instId, shortName, upl });
+      } else {
+        shortTotal += upl;
+        shortItems.push({ instId, shortName, upl });
+      }
+    }
+    return { longItems, shortItems, longTotal, shortTotal };
+  }, [positionOpen, config?.baskets, ds?.positions_data, ds?.long_basket, ds?.short_basket]);
+
   const profitData = [
     { period: "1H", value: summary ? summary.avg_trade_pct * 0.3 : 0 },
     { period: "1D", value: summary ? summary.avg_trade_pct * 0.6 : 0 },
@@ -324,10 +375,10 @@ export default function DashboardPage() {
 
       <h1 className="text-2xl font-semibold mb-6">Мой дашборд</h1>
 
-      {/* Row 1: Overview, Spread & PnL, Bot */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Row 1: Overview, Spread & PnL (expanded) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Overview */}
-        <motion.div {...anim(0)} className="card-glass p-6">
+        <motion.div {...anim(0)} className="card-glass p-6 lg:col-span-1">
           <h2 className="text-sm font-medium text-[var(--muted)] mb-4">Баланс</h2>
           <p className="text-3xl font-semibold">
             ${balance.toFixed(2)}
@@ -363,7 +414,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Spread & Chart */}
-        <motion.div {...anim(0.05)} className="card-glass p-6">
+        <motion.div {...anim(0.05)} className="card-glass p-6 lg:col-span-2">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-medium text-[var(--muted)]">Спред (live)</h2>
             <div className="flex gap-1">
@@ -406,12 +457,6 @@ export default function DashboardPage() {
                 <span className="w-3 h-0.5 bg-amber-400 inline-block" style={{ borderTop: "2px dashed" }} />
                 <span className="text-[var(--muted)]">Вход: {spreadLevels.entry.toFixed(4)}%</span>
               </span>
-              {spreadLevels.tp != null && (
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-0.5 inline-block" style={{ borderTop: "2px dashed rgb(34,197,94)" }} />
-                  <span className="text-[var(--muted)]">TP: {spreadLevels.tp.toFixed(4)}%</span>
-                </span>
-              )}
               {spreadLevels.sl != null && (
                 <span className="flex items-center gap-1">
                   <span className="w-3 h-0.5 inline-block" style={{ borderTop: "2px dashed rgb(239,68,68)" }} />
@@ -428,7 +473,8 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <div className={spreadLevels ? "h-40" : "h-28"}>
+          <div className={`flex gap-4 ${spreadLevels ? "flex-row" : ""}`}>
+          <div className={`flex-1 min-w-0 ${spreadLevels ? "h-40" : "h-28"}`}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={spreadHistory} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
                 <defs>
@@ -445,7 +491,6 @@ export default function DashboardPage() {
                       if (!isFinite(dataMin)) return -0.2;
                       let min = dataMin;
                       if (spreadLevels) {
-                        if (spreadLevels.tp != null) min = Math.min(min, spreadLevels.tp);
                         min = Math.min(min, spreadLevels.entry);
                         if (spreadLevels.sl != null) min = Math.min(min, spreadLevels.sl);
                       }
@@ -455,7 +500,6 @@ export default function DashboardPage() {
                       if (!isFinite(dataMax)) return 0.2;
                       let max = dataMax;
                       if (spreadLevels) {
-                        if (spreadLevels.tp != null) max = Math.max(max, spreadLevels.tp);
                         max = Math.max(max, spreadLevels.entry);
                         if (spreadLevels.sl != null) max = Math.max(max, spreadLevels.sl);
                       }
@@ -477,7 +521,6 @@ export default function DashboardPage() {
                       const scale = yAxis.scale;
                       const lines: Array<{ y: number; stroke: string; dash: string }> = [
                         { y: spreadLevels.entry, stroke: "#f59e0b", dash: "6 3" },
-                        ...(spreadLevels.tp != null ? [{ y: spreadLevels.tp, stroke: "#22c55e", dash: "4 4" }] : []),
                         ...(spreadLevels.sl != null ? [{ y: spreadLevels.sl, stroke: "#ef4444", dash: "4 4" }] : []),
                       ];
                       return (
@@ -506,44 +549,122 @@ export default function DashboardPage() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </motion.div>
 
-        {/* Bot status */}
-        <motion.div {...anim(0.1)} className="card-glass p-6">
-          <h2 className="text-sm font-medium text-[var(--muted)] mb-4">Бот</h2>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${status?.alive ? "bg-[var(--positive)] animate-pulse" : "bg-[var(--negative)]"}`} />
-              <span className="font-medium">{status?.alive ? "Активен" : "Остановлен"}</span>
-            </div>
-            {status?.alive && (
-              <div className="text-xs text-[var(--muted)] space-y-1">
-                <p>Uptime: {status?.uptime_seconds != null ? fmtDuration(status.uptime_seconds) : "—"}</p>
-                <p>Состояние: {ds?.actual_state || "—"}</p>
-                <p>Подключение: {ds?.connection_status || "—"}</p>
+          {spreadLevels && tpPct != null && (
+            <div className="flex-1 min-w-0 h-40 flex flex-col">
+              <p className="text-xs text-[var(--muted)] mb-1">PnL Live</p>
+              <div className="flex-1 min-h-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={pnlHistory} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
+                    <defs>
+                      <linearGradient id="pnlGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="t" hide />
+                    <YAxis
+                      hide
+                      domain={[
+                        (dataMin: number) => {
+                          const d = isFinite(dataMin) ? dataMin : 0;
+                          return Math.min(0, d, -tpPct * 0.5) - 0.01;
+                        },
+                        (dataMax: number) => {
+                          const d = isFinite(dataMax) ? dataMax : 0;
+                          return Math.max(tpPct * 1.2, d, 0) + 0.01;
+                        },
+                      ]}
+                    />
+                    <Tooltip
+                      contentStyle={{ background: "var(--card-bg)", border: "1px solid var(--card-border)", borderRadius: 8, fontSize: 12 }}
+                      formatter={(v: number) => [`${typeof v === "number" ? (v >= 0 ? "+" : "") + v.toFixed(3) : v}%`, "PnL"]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="v"
+                      stroke="var(--accent)"
+                      strokeWidth={1.5}
+                      fill="url(#pnlGrad)"
+                      isAnimationActive={false}
+                    />
+                    <Customized
+                      component={(props: { yAxisMap?: Record<string, { scale: (v: number) => number }>; offset?: { left: number; width: number; height: number } }) => {
+                        const yAxis = props.yAxisMap && Object.values(props.yAxisMap)[0];
+                        const { width = 0 } = props.offset || {};
+                        if (!yAxis?.scale || width <= 0) return null;
+                        const scale = yAxis.scale;
+                        const lines: Array<{ y: number; stroke: string; dash: string }> = [
+                          { y: 0, stroke: "#f59e0b", dash: "6 3" },
+                          { y: tpPct, stroke: "#22c55e", dash: "4 4" },
+                        ];
+                        return (
+                          <g>
+                            {lines.map((l, i) => {
+                              const py = scale(l.y);
+                              if (!isFinite(py)) return null;
+                              return (
+                                <line
+                                  key={i}
+                                  x1={0}
+                                  y1={py}
+                                  x2={width}
+                                  y2={py}
+                                  stroke={l.stroke}
+                                  strokeWidth={1.5}
+                                  strokeDasharray={l.dash}
+                                />
+                              );
+                            })}
+                          </g>
+                        );
+                      }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
-            )}
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={handleStart}
-                disabled={botActionLoading || !!status?.alive}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--positive)]/20 text-[var(--positive)] hover:bg-[var(--positive)]/30 disabled:opacity-50 disabled:cursor-not-allowed transition"
-              >
-                <Play className="w-4 h-4" />
-                Старт
-              </button>
-              <button
-                onClick={handleStop}
-                disabled={botActionLoading || !status?.alive}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--negative)]/20 text-[var(--negative)] hover:bg-[var(--negative)]/30 disabled:opacity-50 disabled:cursor-not-allowed transition"
-              >
-                <Square className="w-4 h-4" />
-                Стоп
-              </button>
+              <div className="flex items-center gap-3 mt-1 text-xs text-[var(--muted)]">
+                <span>0%</span>
+                <span className="text-[var(--positive)]">TP: +{tpPct.toFixed(2)}%</span>
+              </div>
             </div>
+          )}
           </div>
         </motion.div>
       </div>
+
+      {/* Bot status */}
+      <motion.div {...anim(0.08)} className="card-glass p-4 mt-6 flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className={`w-2.5 h-2.5 rounded-full ${status?.alive ? "bg-[var(--positive)] animate-pulse" : "bg-[var(--negative)]"}`} />
+          <span className="font-medium">{status?.alive ? "Бот активен" : "Бот остановлен"}</span>
+        </div>
+        {status?.alive && (
+          <div className="flex items-center gap-4 text-xs text-[var(--muted)]">
+            <span>Uptime: {status?.uptime_seconds != null ? fmtDuration(status.uptime_seconds) : "—"}</span>
+            <span>Состояние: {ds?.actual_state || "—"}</span>
+            <span>Подключение: {ds?.connection_status || "—"}</span>
+          </div>
+        )}
+        <div className="flex gap-2 ml-auto">
+          <button
+            onClick={handleStart}
+            disabled={botActionLoading || !!status?.alive}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--positive)]/20 text-[var(--positive)] hover:bg-[var(--positive)]/30 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            <Play className="w-4 h-4" />
+            Старт
+          </button>
+          <button
+            onClick={handleStop}
+            disabled={botActionLoading || !status?.alive}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--negative)]/20 text-[var(--negative)] hover:bg-[var(--negative)]/30 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            <Square className="w-4 h-4" />
+            Стоп
+          </button>
+        </div>
+      </motion.div>
 
       {/* Row 2: Current Position + Quotes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
@@ -590,9 +711,53 @@ export default function DashboardPage() {
                   <p className="text-xs text-[var(--muted)]">Суммарный PnL</p>
                   <p className={`font-medium ${pnl >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
                     {pnl >= 0 ? "+" : ""}{pnl.toFixed(3)}%
+                    {pnlUsdt != null && (
+                      <span className={`block text-xs mt-0.5 ${pnlUsdt >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                        {pnlUsdt >= 0 ? "+" : ""}${pnlUsdt.toFixed(2)}
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
+              {positionsBreakdown && (
+                <div className="mt-3 pt-3 border-t border-[var(--card-border)]">
+                  <p className="text-xs text-[var(--muted)] mb-2">Позиции по инструментам (PnL USDT)</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 max-h-44 overflow-y-auto">
+                    <div>
+                      <p className="text-xs font-medium text-[var(--positive)] mb-1">LONG</p>
+                      {positionsBreakdown.longItems.map((item) => (
+                        <div key={item.instId} className="flex items-center justify-between py-1 px-2 rounded bg-[var(--positive)]/5 text-sm">
+                          <span>{item.shortName}</span>
+                          <span className={`font-medium ${item.upl >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                            {item.upl >= 0 ? "+" : ""}${item.upl.toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-[var(--negative)] mb-1">SHORT</p>
+                      {positionsBreakdown.shortItems.map((item) => (
+                        <div key={item.instId} className="flex items-center justify-between py-1 px-2 rounded bg-[var(--negative)]/5 text-sm">
+                          <span>{item.shortName}</span>
+                          <span className={`font-medium ${item.upl >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                            {item.upl >= 0 ? "+" : ""}${item.upl.toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--card-border)]/50 text-sm">
+                    <span className="text-[var(--muted)]">LONG: <span className={`font-medium ${positionsBreakdown.longTotal >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>{positionsBreakdown.longTotal >= 0 ? "+" : ""}${positionsBreakdown.longTotal.toFixed(2)}</span></span>
+                    <span className="text-[var(--muted)]">SHORT: <span className={`font-medium ${positionsBreakdown.shortTotal >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>{positionsBreakdown.shortTotal >= 0 ? "+" : ""}${positionsBreakdown.shortTotal.toFixed(2)}</span></span>
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-right">
+                    <span className="text-[var(--muted)]">Итого: </span>
+                    <span className={pnlUsdt != null && pnlUsdt >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}>
+                      {pnlUsdt != null ? `${pnlUsdt >= 0 ? "+" : ""}$${pnlUsdt.toFixed(2)}` : "—"}
+                    </span>
+                  </div>
+                </div>
+              )}
               <button
                 onClick={handleClosePosition}
                 disabled={botActionLoading}

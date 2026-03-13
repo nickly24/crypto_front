@@ -12,7 +12,7 @@ function num(v: number | string | null | undefined): number {
   return typeof v === "number" ? v : parseFloat(String(v)) || 0;
 }
 
-export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: number; tp: number | null; sl: number | null } | null }) {
+export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: number; tp?: number | null; sl: number | null } | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ReturnType<IChartApi["addSeries"]> | null>(null);
@@ -102,7 +102,6 @@ export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: numbe
     if (!series || !spreadLevels) return;
     const lines: ReturnType<typeof series.createPriceLine>[] = [];
     lines.push(series.createPriceLine({ price: spreadLevels.entry, color: "#f59e0b", lineWidth: 1, lineStyle: 2 }));
-    if (spreadLevels.tp != null) lines.push(series.createPriceLine({ price: spreadLevels.tp, color: "#22c55e", lineWidth: 1, lineStyle: 2 }));
     if (spreadLevels.sl != null) lines.push(series.createPriceLine({ price: spreadLevels.sl, color: "#ef4444", lineWidth: 1, lineStyle: 2 }));
     return () => lines.forEach((pl) => series.removePriceLine(pl));
   }, [spreadLevels]);
