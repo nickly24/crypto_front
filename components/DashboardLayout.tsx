@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth";
 import { Header } from "./Header";
@@ -8,9 +8,13 @@ import { Header } from "./Header";
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const redirectingRef = useRef(false);
 
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
+    if (loading || user) return;
+    if (redirectingRef.current) return;
+    redirectingRef.current = true;
+    router.replace("/login");
   }, [user, loading, router]);
 
   if (loading) {
