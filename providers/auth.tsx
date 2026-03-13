@@ -28,13 +28,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     me().then((r) => {
-      if (r.ok && r.data) {
-        setUser(r.data);
-      } else {
-        if (typeof window !== "undefined") localStorage.removeItem("access_token");
-        setUser(null);
-      }
-    }).finally(() => setLoading(false));
+      if (r.ok && r.data) setUser(r.data);
+      else if (typeof window !== "undefined") localStorage.removeItem("access_token");
+      setLoading(false);
+    });
   }, []);
 
   const login = async (email: string, password: string) => {
