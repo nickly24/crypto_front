@@ -255,6 +255,7 @@ export default function DashboardPage() {
   const pnl = num(ds?.pnl_total_pct);
   const pnlLong = num(ds?.pnl_long_pct);
   const pnlShort = num(ds?.pnl_short_pct);
+  const pnlUsdt = ds?.pnl_total_usdt != null ? num(ds.pnl_total_usdt) : null;
   const positionOpen = ds?.position_open === 1;
   const entrySpread = ds?.entry_spread_pct != null ? num(ds.entry_spread_pct) : null;
   const ping = ds?.okx_ping_ms ?? null;
@@ -352,6 +353,11 @@ export default function DashboardPage() {
               <p className={`text-sm font-semibold ${pnl >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
                 {pnl >= 0 ? "+" : ""}{pnl.toFixed(3)}%
               </p>
+              {positionOpen && pnlUsdt != null && (
+                <p className={`text-xs mt-0.5 ${pnlUsdt >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                  {pnlUsdt >= 0 ? "+" : ""}${pnlUsdt.toFixed(2)}
+                </p>
+              )}
             </div>
           </div>
         </motion.div>
