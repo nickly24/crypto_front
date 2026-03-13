@@ -208,16 +208,13 @@ export default function DashboardPage() {
       if (r.ok && r.data?.status === "started") {
         setBotActionLabel("Бот запущен");
       } else {
-        setBotActionLabel("Перезагрузка...");
-        setTimeout(() => window.location.reload(), 500);
-        return;
+        setBotActionLabel("Ошибка — обновляем статус");
+        fetchStatus();
       }
     } catch {
-      setBotActionLabel("Перезагрузка...");
-      setTimeout(() => window.location.reload(), 500);
-      return;
+      setBotActionLabel("Ошибка сети");
+      fetchStatus();
     }
-    fetchStatus();
     setTimeout(() => { setBotActionLoading(false); setBotActionLabel(null); }, 1500);
   }
 
@@ -229,16 +226,13 @@ export default function DashboardPage() {
       if (r.ok && r.data?.status === "stopped") {
         setBotActionLabel("Бот остановлен");
       } else {
-        setBotActionLabel("Перезагрузка...");
-        setTimeout(() => window.location.reload(), 500);
-        return;
+        setBotActionLabel("Ошибка — обновляем статус");
+        fetchStatus();
       }
     } catch {
-      setBotActionLabel("Перезагрузка...");
-      setTimeout(() => window.location.reload(), 500);
-      return;
+      setBotActionLabel("Ошибка сети");
+      fetchStatus();
     }
-    fetchStatus();
     setTimeout(() => { setBotActionLoading(false); setBotActionLabel(null); }, 1500);
   }
 
@@ -661,6 +655,7 @@ export default function DashboardPage() {
         )}
         <div className="flex gap-2 ml-auto">
           <button
+            type="button"
             onClick={handleStart}
             disabled={botActionLoading || !!status?.alive}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--positive)]/20 text-[var(--positive)] hover:bg-[var(--positive)]/30 disabled:opacity-50 disabled:cursor-not-allowed transition"
@@ -669,6 +664,7 @@ export default function DashboardPage() {
             Старт
           </button>
           <button
+            type="button"
             onClick={handleStop}
             disabled={botActionLoading || !status?.alive}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--negative)]/20 text-[var(--negative)] hover:bg-[var(--negative)]/30 disabled:opacity-50 disabled:cursor-not-allowed transition"
