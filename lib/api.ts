@@ -1,9 +1,10 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://nickly24-crypto-back-67f1.twc1.net";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://nickly24-crypto-back-67f1.twc1.net/";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("access_token");
 }
+
 
 export async function api<T>(
   path: string,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import Link from "next/link";
@@ -134,6 +134,7 @@ export default function DashboardPage() {
   const [botActionLabel, setBotActionLabel] = useState<string | null>(null);
   const [spreadHistory, setSpreadHistory] = useState<Array<{ t: string; v: number }>>([]);
   const [pnlHistory, setPnlHistory] = useState<Array<{ t: string; v: number }>>([]);
+  const pollVersionRef = useRef(0);
 
   function fetchConfig() {
     getBotConfig().then((r) => {
@@ -149,7 +150,10 @@ export default function DashboardPage() {
   }
 
   function fetchStatus() {
+    pollVersionRef.current += 1;
+    const myVersion = pollVersionRef.current;
     botStatus().then((r) => {
+      if (pollVersionRef.current !== myVersion) return; // устаревший ответ — игнорируем
       if (r.ok && r.data) {
         const d = r.data as unknown as BotStatusData;
         setStatus(d);
@@ -309,7 +313,7 @@ export default function DashboardPage() {
 
   const positionsBreakdown = useMemo(() => {
     if (!positionOpen || !config?.baskets?.length || !ds?.positions_data) return null;
-    let positions: Record<string, { side?: string; qty?: number; avg_price?: number; upl?: number }> = {};
+    let positions: Record<string, { side?: string; qty?: number; avg_price?: number; upl?: number; fee?: number; fundingFee?: number }> = {};
     try {
       const raw = ds.positions_data;
       positions = typeof raw === "string" ? JSON.parse(raw) : raw || {};
@@ -328,8 +332,12 @@ export default function DashboardPage() {
     const shortItems: Array<{ instId: string; shortName: string; upl: number }> = [];
     let longTotal = 0;
     let shortTotal = 0;
+    let totalCommission = 0;
     for (const [instId, p] of entries) {
       const upl = num(p?.upl ?? 0);
+      const fee = num(p?.fee ?? 0);
+      const fundingFee = num(p?.fundingFee ?? 0);
+      totalCommission += fee + fundingFee;
       const side = longSyms.has(instId) ? "long" : "short";
       const shortName = instId.replace("-USDT-SWAP", "");
       if (side === "long") {
@@ -340,7 +348,7 @@ export default function DashboardPage() {
         shortItems.push({ instId, shortName, upl });
       }
     }
-    return { longItems, shortItems, longTotal, shortTotal };
+    return { longItems, shortItems, longTotal, shortTotal, totalCommission };
   }, [positionOpen, config?.baskets, ds?.positions_data, ds?.long_basket, ds?.short_basket]);
 
   const profitData = [
@@ -407,6 +415,11 @@ export default function DashboardPage() {
               {positionOpen && pnlUsdt != null && (
                 <p className={`text-xs mt-0.5 ${pnlUsdt >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
                   {pnlUsdt >= 0 ? "+" : ""}${pnlUsdt.toFixed(2)}
+                </p>
+              )}
+              {positionOpen && positionsBreakdown && positionsBreakdown.totalCommission !== 0 && (
+                <p className="text-xs mt-0.5 text-[var(--muted)]">
+                  Комиссия: {positionsBreakdown.totalCommission >= 0 ? "+" : ""}${positionsBreakdown.totalCommission.toFixed(2)}
                 </p>
               )}
             </div>
@@ -716,6 +729,11 @@ export default function DashboardPage() {
                         {pnlUsdt >= 0 ? "+" : ""}${pnlUsdt.toFixed(2)}
                       </span>
                     )}
+                    {positionsBreakdown && positionsBreakdown.totalCommission !== 0 && (
+                      <span className="block text-xs mt-0.5 text-[var(--muted)]">
+                        Комиссия: {positionsBreakdown.totalCommission >= 0 ? "+" : ""}${positionsBreakdown.totalCommission.toFixed(2)}
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -750,6 +768,11 @@ export default function DashboardPage() {
                     <span className="text-[var(--muted)]">LONG: <span className={`font-medium ${positionsBreakdown.longTotal >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>{positionsBreakdown.longTotal >= 0 ? "+" : ""}${positionsBreakdown.longTotal.toFixed(2)}</span></span>
                     <span className="text-[var(--muted)]">SHORT: <span className={`font-medium ${positionsBreakdown.shortTotal >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>{positionsBreakdown.shortTotal >= 0 ? "+" : ""}${positionsBreakdown.shortTotal.toFixed(2)}</span></span>
                   </div>
+                  {positionsBreakdown.totalCommission !== 0 && (
+                    <div className="mt-1 text-sm text-[var(--muted)] text-right">
+                      Комиссия: {positionsBreakdown.totalCommission >= 0 ? "+" : ""}${positionsBreakdown.totalCommission.toFixed(2)}
+                    </div>
+                  )}
                   <div className="mt-1 text-sm font-semibold text-right">
                     <span className="text-[var(--muted)]">Итого: </span>
                     <span className={pnlUsdt != null && pnlUsdt >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}>
