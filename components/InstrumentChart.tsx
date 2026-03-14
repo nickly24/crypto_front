@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createChart, IChartApi, CandlestickSeries, LineSeries } from "lightweight-charts";
+import { useTheme } from "@/providers/theme";
 import { getChartCandles } from "@/lib/api";
 import { utcMsToLocalChartTime } from "@/lib/chart-time";
 import { Plus, Trash2 } from "lucide-react";
@@ -29,6 +30,7 @@ function saveDrawings(instId: string, vals: number[]) {
 }
 
 export function InstrumentChart({ instId, bar = "1m", chartType = "candle" }: InstrumentChartProps) {
+  const { positiveColor, negativeColor, accentColor } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const [drawings, setDrawings] = useState<number[]>([]);
@@ -45,6 +47,7 @@ export function InstrumentChart({ instId, bar = "1m", chartType = "candle" }: In
       layout: {
         background: { color: "transparent" },
         textColor: "#94a3b8",
+        attributionLogo: false,
       },
       grid: { vertLines: { color: "rgba(255,255,255,0.08)" }, horzLines: { color: "rgba(255,255,255,0.08)" } },
       rightPriceScale: {
@@ -86,11 +89,11 @@ export function InstrumentChart({ instId, bar = "1m", chartType = "candle" }: In
       let series: any;
       if (chartType === "candle") {
         series = chart.addSeries(CandlestickSeries, {
-          upColor: "#9ddb00",
-          downColor: "#db7500",
+          upColor: positiveColor,
+          downColor: negativeColor,
           borderVisible: false,
-          wickUpColor: "#9ddb00",
-          wickDownColor: "#db7500",
+          wickUpColor: positiveColor,
+          wickDownColor: negativeColor,
         });
         const data = r.data.candles
           .slice()
@@ -105,7 +108,7 @@ export function InstrumentChart({ instId, bar = "1m", chartType = "candle" }: In
         series.setData(data);
       } else {
         series = chart.addSeries(LineSeries, {
-          color: "#9ddb00",
+          color: positiveColor,
           lineWidth: 2,
         });
         const data = r.data.candles
@@ -118,9 +121,11 @@ export function InstrumentChart({ instId, bar = "1m", chartType = "candle" }: In
         series.setData(data);
       }
       lastSeriesRef.current = series;
-      drawings.forEach((v) => series.createPriceLine({ price: v, color: "#6366f1", lineWidth: 1, lineStyle: 2 }));
+      drawings.forEach((v) =>
+        series.createPriceLine({ price: v, color: accentColor, lineWidth: 1, lineStyle: 2, axisLabelVisible: false })
+      );
     });
-  }, [instId, bar, chartType, drawings]);
+  }, [instId, bar, chartType, drawings, positiveColor, negativeColor, accentColor]);
 
   const addLine = () => {
     const v = parseFloat(newLineValue.replace(",", "."));

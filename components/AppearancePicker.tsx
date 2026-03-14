@@ -113,7 +113,7 @@ export function AppearancePicker({ open, onClose }: Props) {
             </button>
           </div>
 
-          <div className="p-6 space-y-8 overflow-y-auto flex-1">
+          <div className="p-6 space-y-8 overflow-y-auto flex-1 min-h-0 max-h-[calc(90vh-140px)]">
             {/* Interface theme + Preset themes в 2 колонки */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
               <div className="lg:col-span-1 space-y-4">

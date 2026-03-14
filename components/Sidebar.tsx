@@ -8,11 +8,13 @@ import {
   BarChart3,
   HelpCircle,
   Bookmark,
+  LineChart,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/trading", label: "Trading", icon: LineChart },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/faq", label: "FAQ", icon: Bookmark },

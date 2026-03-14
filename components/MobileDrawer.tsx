@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, LayoutDashboard, Settings, BarChart3, HelpCircle, Bookmark, LogOut, Palette } from "lucide-react";
+import { X, LayoutDashboard, Settings, BarChart3, HelpCircle, Bookmark, LogOut, Palette, LineChart } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { HeaderTickers } from "@/components/HeaderTickers";
 import { useAuth } from "@/providers/auth";
@@ -16,6 +16,7 @@ type Props = {
 
 const nav = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/trading", label: "Trading", icon: LineChart },
   { href: "/analytics", label: "Stats", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/faq", label: "FAQ", icon: Bookmark },
@@ -42,9 +43,10 @@ export function MobileDrawer({ open, onClose }: Props) {
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed left-0 top-0 bottom-0 z-50 w-72 max-w-[85vw] flex flex-col bg-[var(--sidebar-bg)] border-r border-[var(--card-border)] md:hidden pt-[env(safe-area-inset-top)]"
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed left-0 top-0 bottom-0 z-50 w-72 max-w-[85vw] flex flex-col bg-[var(--sidebar-bg)] border-r border-[var(--card-border)] md:hidden"
           >
+            <div className="pt-[env(safe-area-inset-top)]" />
             <div className="p-4 border-b border-[var(--card-border)]">
               <div className="flex items-center justify-between">
                 <Link href="/dashboard" onClick={onClose} className="flex items-center gap-3">
@@ -61,7 +63,7 @@ export function MobileDrawer({ open, onClose }: Props) {
                   <X className="w-6 h-6" />
                 </button>
             </div>
-            <div className="px-4 pb-4">
+            <div className="px-4 pt-4 pb-4">
               <HeaderTickers vertical />
             </div>
             </div>

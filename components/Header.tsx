@@ -9,6 +9,7 @@ import {
   Bell,
   LogOut,
   Menu,
+  Palette,
   Zap,
   UserPlus,
   ChevronRight,
@@ -166,26 +167,33 @@ function AccountSwitcher() {
 type HeaderProps = { onOpenDrawer?: () => void };
 
 export function Header({ onOpenDrawer }: HeaderProps) {
-  const { logout } = useAuth();
+  const { openAppearancePicker } = useTheme();
 
   return (
-    <header className="h-14 md:h-16 flex items-center justify-between px-3 md:px-6 border-b border-[var(--card-border)] bg-[var(--card-bg)] shrink-0">
+    <header className="h-16 md:h-16 flex items-center justify-between px-4 md:px-6 border-b border-[var(--card-border)] bg-[var(--card-bg)] shrink-0">
       <div className="flex items-center gap-2 flex-1 min-w-0">
         {onOpenDrawer && (
           <button
             onClick={onOpenDrawer}
-            className="md:hidden p-2 -ml-1 rounded-xl text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-hover)]"
+            className="md:hidden p-2.5 -ml-1 rounded-xl text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-hover)]"
             title="Menu"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-7 h-7" />
           </button>
         )}
         <div className="hidden md:flex flex-1 min-w-0">
           <HeaderTickers />
         </div>
       </div>
-      <div className="flex items-center gap-1 sm:gap-2 md:gap-4 ml-2 shrink-0">
-        <button className="relative p-2 rounded-xl text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-hover)] transition">
+      <div className="flex items-center gap-2 sm:gap-2 md:gap-4 ml-2 shrink-0">
+        <button
+          onClick={openAppearancePicker}
+          className="hidden md:flex p-2 rounded-xl text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-hover)] transition"
+          title="Theme & appearance"
+        >
+          <Palette className="w-5 h-5" />
+        </button>
+        <button className="relative p-2.5 md:p-2 rounded-xl text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-hover)] transition">
           <Bell className="w-5 h-5" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--negative)]" />
         </button>

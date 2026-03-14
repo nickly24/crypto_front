@@ -44,7 +44,7 @@ export function InstrumentsChartsView({ configBaskets = [] }: InstrumentsChartsV
   }
 
   return (
-    <div className="flex h-[calc(100vh-200px)] min-h-[500px] w-full">
+    <div className="flex h-[calc(100vh-180px)] min-h-[560px] w-full">
       <aside className="w-44 shrink-0 flex flex-col gap-1 border-r border-[var(--card-border)] pr-3 py-1 overflow-y-auto">
         <p className="text-xs font-medium text-[var(--muted)] mb-2">Select for chart</p>
         {instruments.map((inst) => {
@@ -109,7 +109,7 @@ export function InstrumentsChartsView({ configBaskets = [] }: InstrumentsChartsV
               {selected1 && <CryptoIcon symbol={selected1} size={16} />}
               {selected1 ? selected1.replace("-USDT-SWAP", "") : "Slot 1"}
             </p>
-            <div className="flex-1 min-h-[180px]">
+            <div className="flex-1 min-h-[240px]">
               <InstrumentChart instId={selected1} bar={bar} chartType={chartType} />
             </div>
           </div>
@@ -118,7 +118,7 @@ export function InstrumentsChartsView({ configBaskets = [] }: InstrumentsChartsV
               {selected2 && <CryptoIcon symbol={selected2} size={16} />}
               {selected2 ? selected2.replace("-USDT-SWAP", "") : "Slot 2"}
             </p>
-            <div className="flex-1 min-h-[180px]">
+            <div className="flex-1 min-h-[240px]">
               <InstrumentChart instId={selected2} bar={bar} chartType={chartType} />
             </div>
           </div>

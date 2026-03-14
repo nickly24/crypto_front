@@ -49,6 +49,7 @@ import {
 } from "lucide-react";
 import { CryptoIcon } from "@/components/CryptoIcon";
 import { useFiatRates } from "@/lib/useFiatRates";
+import { useTheme } from "@/providers/theme";
 
 type BotStatusData = {
   alive?: boolean;
@@ -140,6 +141,7 @@ export default function DashboardPage() {
   const [pnlHistory, setPnlHistory] = useState<Array<{ t: string; v: number }>>([]);
   const pollVersionRef = useRef(0);
   const fiatRates = useFiatRates();
+  const { positiveColor, negativeColor, accentColor } = useTheme();
 
   function fetchConfig() {
     getBotConfig().then((r) => {
@@ -456,16 +458,16 @@ export default function DashboardPage() {
             <h2 className="text-sm font-medium text-[var(--muted)]">Spread (live)</h2>
             <div className="flex gap-1">
               <Link
-                href="/dashboard/chart?mode=spread"
+                href="/trading?mode=spread"
                 className="p-1.5 rounded-lg hover:bg-[var(--background)] text-[var(--muted)] hover:text-[var(--foreground)] transition"
-                title="Expand spread chart"
+                title="Trading analysis — Spread"
               >
                 <Maximize2 className="w-4 h-4" />
               </Link>
               <Link
-                href="/dashboard/chart?mode=instruments"
+                href="/trading?mode=instruments"
                 className="p-1.5 rounded-lg hover:bg-[var(--background)] text-[var(--muted)] hover:text-[var(--foreground)] transition"
-                title="Instruments chart"
+                title="Trading analysis — Instruments"
               >
                 <Layers className="w-4 h-4" />
               </Link>
@@ -496,7 +498,7 @@ export default function DashboardPage() {
               </span>
               {spreadLevels.sl != null && (
                 <span className="flex items-center gap-1">
-                  <span className="w-3 h-0.5 inline-block" style={{ borderTop: "2px dashed #db7500" }} />
+                  <span className="w-3 h-0.5 inline-block" style={{ borderTop: `2px dashed ${negativeColor}` }} />
                   <span className="text-[var(--muted)]">SL: {spreadLevels.sl.toFixed(4)}%</span>
                 </span>
               )}
@@ -523,12 +525,12 @@ export default function DashboardPage() {
               >
                 <defs>
                   <linearGradient id="spreadGradPos" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#9ddb00" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#9ddb00" stopOpacity={0} />
+                    <stop offset="0%" stopColor={positiveColor} stopOpacity={0.3} />
+                    <stop offset="100%" stopColor={positiveColor} stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="spreadGradNeg" x1="0" y1="1" x2="0" y2="0">
-                    <stop offset="0%" stopColor="#db7500" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#db7500" stopOpacity={0} />
+                    <stop offset="0%" stopColor={negativeColor} stopOpacity={0.3} />
+                    <stop offset="100%" stopColor={negativeColor} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="t" hide />
@@ -560,8 +562,8 @@ export default function DashboardPage() {
                   formatter={(v: number) => [`${typeof v === "number" ? v.toFixed(4) : v}%`, "Spread"]}
                 />
                 <ReferenceLine y={0} stroke="var(--muted)" strokeWidth={0.5} strokeDasharray="2 2" />
-                <Area type="monotone" dataKey="vPos" stroke="#9ddb00" strokeWidth={1.5} fill="url(#spreadGradPos)" isAnimationActive={false} connectNulls />
-                <Area type="monotone" dataKey="vNeg" stroke="#db7500" strokeWidth={1.5} fill="url(#spreadGradNeg)" isAnimationActive={false} connectNulls baseValue={0} />
+                <Area type="monotone" dataKey="vPos" stroke={positiveColor} strokeWidth={1.5} fill="url(#spreadGradPos)" isAnimationActive={false} connectNulls />
+                <Area type="monotone" dataKey="vNeg" stroke={negativeColor} strokeWidth={1.5} fill="url(#spreadGradNeg)" isAnimationActive={false} connectNulls baseValue={0} />
                 {spreadLevels && (
                   <Customized
                     component={(props: { yAxisMap?: Record<string, { scale: (v: number) => number }>; offset?: { left: number; width: number; height: number } }) => {
@@ -570,8 +572,8 @@ export default function DashboardPage() {
                       if (!yAxis?.scale || width <= 0) return null;
                       const scale = yAxis.scale;
                       const lines: Array<{ y: number; stroke: string; dash: string }> = [
-                        { y: spreadLevels.entry, stroke: "#f59e0b", dash: "6 3" },
-                        ...(spreadLevels.sl != null ? [{ y: spreadLevels.sl, stroke: "#db7500", dash: "4 4" }] : []),
+                        { y: spreadLevels.entry, stroke: accentColor, dash: "6 3" },
+                        ...(spreadLevels.sl != null ? [{ y: spreadLevels.sl, stroke: negativeColor, dash: "4 4" }] : []),
                       ];
                       return (
                         <g>
@@ -615,12 +617,12 @@ export default function DashboardPage() {
                   >
                     <defs>
                       <linearGradient id="pnlGradPos" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#9ddb00" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#9ddb00" stopOpacity={0} />
+                        <stop offset="0%" stopColor={positiveColor} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={positiveColor} stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="pnlGradNeg" x1="0" y1="1" x2="0" y2="0">
-                        <stop offset="0%" stopColor="#db7500" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#db7500" stopOpacity={0} />
+                        <stop offset="0%" stopColor={negativeColor} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={negativeColor} stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="t" hide />
@@ -642,8 +644,8 @@ export default function DashboardPage() {
                       formatter={(v: number) => [`${typeof v === "number" ? (v >= 0 ? "+" : "") + v.toFixed(3) : v}%`, "PnL"]}
                     />
                     <ReferenceLine y={0} stroke="var(--muted)" strokeWidth={0.5} strokeDasharray="2 2" />
-                    <Area type="monotone" dataKey="vPos" stroke="#9ddb00" strokeWidth={1.5} fill="url(#pnlGradPos)" isAnimationActive={false} connectNulls />
-                    <Area type="monotone" dataKey="vNeg" stroke="#db7500" strokeWidth={1.5} fill="url(#pnlGradNeg)" isAnimationActive={false} connectNulls baseValue={0} />
+                    <Area type="monotone" dataKey="vPos" stroke={positiveColor} strokeWidth={1.5} fill="url(#pnlGradPos)" isAnimationActive={false} connectNulls />
+                    <Area type="monotone" dataKey="vNeg" stroke={negativeColor} strokeWidth={1.5} fill="url(#pnlGradNeg)" isAnimationActive={false} connectNulls baseValue={0} />
                     <Customized
                       component={(props: { yAxisMap?: Record<string, { scale: (v: number) => number }>; offset?: { left: number; width: number; height: number } }) => {
                         const yAxis = props.yAxisMap && Object.values(props.yAxisMap)[0];
@@ -651,8 +653,8 @@ export default function DashboardPage() {
                         if (!yAxis?.scale || width <= 0) return null;
                         const scale = yAxis.scale;
                         const lines: Array<{ y: number; stroke: string; dash: string }> = [
-                          { y: 0, stroke: "#f59e0b", dash: "6 3" },
-                          { y: tpPct, stroke: "#9ddb00", dash: "4 4" },
+                          { y: 0, stroke: accentColor, dash: "6 3" },
+                          { y: tpPct, stroke: positiveColor, dash: "4 4" },
                         ];
                         return (
                           <g>

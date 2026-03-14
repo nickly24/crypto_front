@@ -7,10 +7,12 @@ import {
   Settings,
   BarChart3,
   Bookmark,
+  LineChart,
 } from "lucide-react";
 
 const nav = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/trading", label: "Trading", icon: LineChart },
   { href: "/analytics", label: "Stats", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/faq", label: "FAQ", icon: Bookmark },

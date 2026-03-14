@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createChart, IChartApi, LineSeries, LineData } from "lightweight-charts";
 import { getChartSpread, botStatus } from "@/lib/api";
+import { useTheme } from "@/providers/theme";
 import { utcMsToLocalChartTime, utcToLocalChartTime } from "@/lib/chart-time";
 
 const LIVE_WINDOW_MS = 10 * 60 * 1000; // 10 минут
@@ -14,6 +15,7 @@ function num(v: number | string | null | undefined): number {
 }
 
 export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: number; tp?: number | null; sl: number | null } | null }) {
+  const { positiveColor, negativeColor, accentColor } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ReturnType<IChartApi["addSeries"]> | null>(null);
@@ -25,6 +27,7 @@ export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: numbe
       layout: {
         background: { color: "transparent" },
         textColor: "#94a3b8",
+        attributionLogo: false,
       },
       grid: { vertLines: { color: "rgba(255,255,255,0.06)" }, horzLines: { color: "rgba(255,255,255,0.06)" } },
       rightPriceScale: {
@@ -40,7 +43,7 @@ export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: numbe
       height: 160,
     });
     const lineSeries = chart.addSeries(LineSeries, {
-      color: "#9ddb00",
+      color: positiveColor,
       lineWidth: 2,
       priceFormat: { type: "percent", precision: 4, minMove: 0.0001 },
     });
@@ -51,7 +54,7 @@ export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: numbe
       chartRef.current = null;
       seriesRef.current = null;
     };
-  }, []);
+  }, [positiveColor]);
 
   useEffect(() => {
     getChartSpread(undefined, 10).then((r) => {
@@ -107,10 +110,10 @@ export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: numbe
     const series = seriesRef.current;
     if (!series || !spreadLevels) return;
     const lines: ReturnType<typeof series.createPriceLine>[] = [];
-    lines.push(series.createPriceLine({ price: spreadLevels.entry, color: "#f59e0b", lineWidth: 1, lineStyle: 2 }));
-    if (spreadLevels.sl != null) lines.push(series.createPriceLine({ price: spreadLevels.sl, color: "#db7500", lineWidth: 1, lineStyle: 2 }));
+    lines.push(series.createPriceLine({ price: spreadLevels.entry, color: accentColor, lineWidth: 1, lineStyle: 2 }));
+    if (spreadLevels.sl != null) lines.push(series.createPriceLine({ price: spreadLevels.sl, color: negativeColor, lineWidth: 1, lineStyle: 2 }));
     return () => lines.forEach((pl) => series.removePriceLine(pl));
-  }, [spreadLevels]);
+  }, [spreadLevels, accentColor, negativeColor]);
 
   return (
     <div className="flex flex-col gap-1">

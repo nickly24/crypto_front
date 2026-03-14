@@ -1,4 +1,19 @@
-export type ThemePresetId = "green-lime" | "orange-mechanic" | "purple-disco" | "blue-powder" | "cyan-flow" | "rose" | "custom";
+export type ThemePresetId =
+  | "green-lime"
+  | "orange-mechanic"
+  | "purple-disco"
+  | "blue-powder"
+  | "cyan-flow"
+  | "rose"
+  | "emerald"
+  | "indigo"
+  | "amber"
+  | "crimson"
+  | "pink-candy"
+  | "sky"
+  | "slate"
+  | "mint"
+  | "custom";
 
 /** Большая палитра для выбора цвета (без нативного color picker) */
 export const COLOR_PALETTE: string[] = [
@@ -32,6 +47,14 @@ export const THEME_PRESETS: ThemePreset[] = [
   { id: "blue-powder", name: "Blue Powder", accent: "#3b82f6", positive: "#3b82f6", negative: "#ea580c" },
   { id: "cyan-flow", name: "Cyan Flow", accent: "#06b6d4", positive: "#06b6d4", negative: "#f97316" },
   { id: "rose", name: "Rose", accent: "#f43f5e", positive: "#f43f5e", negative: "#7c3aed" },
+  { id: "emerald", name: "Emerald", accent: "#10b981", positive: "#10b981", negative: "#ef4444" },
+  { id: "indigo", name: "Indigo", accent: "#6366f1", positive: "#6366f1", negative: "#f59e0b" },
+  { id: "amber", name: "Amber", accent: "#fbbf24", positive: "#fbbf24", negative: "#dc2626" },
+  { id: "crimson", name: "Crimson", accent: "#dc2626", positive: "#22c55e", negative: "#dc2626" },
+  { id: "pink-candy", name: "Pink Candy", accent: "#ec4899", positive: "#ec4899", negative: "#3b82f6" },
+  { id: "sky", name: "Sky", accent: "#0ea5e9", positive: "#0ea5e9", negative: "#f97316" },
+  { id: "slate", name: "Slate", accent: "#64748b", positive: "#22c55e", negative: "#ef4444" },
+  { id: "mint", name: "Mint", accent: "#34d399", positive: "#34d399", negative: "#f43f5e" },
 ];
 
 export function hexToRgba(hex: string, alpha: number): string {

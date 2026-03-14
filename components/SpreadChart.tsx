@@ -6,6 +6,7 @@ import { getChartSpread } from "@/lib/api";
 import { utcMsToLocalChartTime } from "@/lib/chart-time";
 import { Plus, Trash2 } from "lucide-react";
 import { SpreadLiveMini } from "./SpreadLiveMini";
+import { useTheme } from "@/providers/theme";
 
 const DRAWINGS_KEY = "chart-drawings-spread";
 
@@ -32,6 +33,7 @@ function saveDrawings(lines: DrawingLine[]) {
 }
 
 export function SpreadChart({ hours = 10, spreadLevels }: SpreadChartProps) {
+  const { positiveColor, negativeColor, accentColor } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Line"> | null>(null);
@@ -49,6 +51,7 @@ export function SpreadChart({ hours = 10, spreadLevels }: SpreadChartProps) {
       layout: {
         background: { color: "transparent" },
         textColor: "#94a3b8",
+        attributionLogo: false,
       },
       grid: { vertLines: { color: "rgba(255,255,255,0.08)" }, horzLines: { color: "rgba(255,255,255,0.08)" } },
       rightPriceScale: {
@@ -63,7 +66,7 @@ export function SpreadChart({ hours = 10, spreadLevels }: SpreadChartProps) {
       },
     });
     const lineSeries = chart.addSeries(LineSeries, {
-      color: "#9ddb00",
+      color: positiveColor,
       lineWidth: 2,
       priceFormat: { type: "percent", precision: 4, minMove: 0.0001 },
     });
@@ -74,7 +77,7 @@ export function SpreadChart({ hours = 10, spreadLevels }: SpreadChartProps) {
       chartRef.current = null;
       seriesRef.current = null;
     };
-  }, []);
+  }, [positiveColor]);
 
   const [pointsCount, setPointsCount] = useState(0);
   useEffect(() => {
@@ -97,19 +100,19 @@ export function SpreadChart({ hours = 10, spreadLevels }: SpreadChartProps) {
     if (!lineSeries) return;
     const priceLines: { pl: ReturnType<typeof lineSeries.createPriceLine> }[] = [];
     if (spreadLevels) {
-      priceLines.push({ pl: lineSeries.createPriceLine({ price: spreadLevels.entry, color: "#f59e0b", lineWidth: 2, lineStyle: 2 }) });
-      if (spreadLevels.sl != null) priceLines.push({ pl: lineSeries.createPriceLine({ price: spreadLevels.sl, color: "#db7500", lineWidth: 2, lineStyle: 2 }) });
+      priceLines.push({ pl: lineSeries.createPriceLine({ price: spreadLevels.entry, color: accentColor, lineWidth: 2, lineStyle: 2 }) });
+      if (spreadLevels.sl != null) priceLines.push({ pl: lineSeries.createPriceLine({ price: spreadLevels.sl, color: negativeColor, lineWidth: 2, lineStyle: 2 }) });
     }
     drawings.forEach((d) => {
-      priceLines.push({ pl: lineSeries.createPriceLine({ price: d.value, color: d.color || "#6366f1", lineWidth: 1, lineStyle: 2 }) });
+      priceLines.push({ pl: lineSeries.createPriceLine({ price: d.value, color: d.color || accentColor, lineWidth: 1, lineStyle: 2 }) });
     });
     return () => priceLines.forEach(({ pl }) => lineSeries.removePriceLine(pl));
-  }, [spreadLevels, drawings]);
+  }, [spreadLevels, drawings, accentColor, negativeColor]);
 
   const addLine = () => {
     const v = parseFloat(newLineValue.replace(",", "."));
     if (isNaN(v)) return;
-    const next = [...drawings, { value: v, color: "#6366f1" }];
+    const next = [...drawings, { value: v, color: accentColor }];
     setDrawings(next);
     saveDrawings(next);
     setNewLineValue("");
