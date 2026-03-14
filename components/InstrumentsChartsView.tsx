@@ -43,83 +43,82 @@ export function InstrumentsChartsView({ configBaskets = [] }: InstrumentsChartsV
     );
   }
 
-  return (
-    <div className="flex h-[calc(100vh-180px)] min-h-[560px] w-full">
-      <aside className="w-44 shrink-0 flex flex-col gap-1 border-r border-[var(--card-border)] pr-3 py-1 overflow-y-auto">
-        <p className="text-xs font-medium text-[var(--muted)] mb-2">Select for chart</p>
-        {instruments.map((inst) => {
-          const short = inst.replace("-USDT-SWAP", "");
-          const is1 = selected1 === inst;
-          const is2 = selected2 === inst;
-          return (
-            <div key={inst} className="flex items-center gap-2">
-              <CryptoIcon symbol={inst} size={18} />
-              <span className="flex-1 text-sm text-[var(--foreground)] truncate">{short}</span>
-              <button
-                onClick={() => setSelected1(inst)}
-                className={`w-7 h-7 rounded text-xs font-medium shrink-0 ${is1 ? "bg-[var(--accent)] text-white" : "bg-[var(--card-bg)] text-[var(--muted)] hover:bg-[var(--card-border)]"}`}
-                title="Chart 1"
-              >
-                1
-              </button>
-              <button
-                onClick={() => setSelected2(inst)}
-                className={`w-7 h-7 rounded text-xs font-medium shrink-0 ${is2 ? "bg-[var(--accent)] text-white" : "bg-[var(--card-bg)] text-[var(--muted)] hover:bg-[var(--card-border)]"}`}
-                title="Chart 2"
-              >
-                2
-              </button>
-            </div>
-          );
-        })}
-      </aside>
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="flex items-center gap-2 flex-wrap shrink-0 py-1">
-          <select
-            value={bar}
-            onChange={(e) => setBar(e.target.value)}
-            className="px-2 py-1.5 rounded bg-[var(--background)] border border-[var(--card-border)] text-sm"
+  const InstrumentList = ({ selected, onSelect }: { selected: string; onSelect: (inst: string) => void }) => (
+    <aside className="w-36 shrink-0 flex flex-col gap-0.5 border-r border-[var(--card-border)] pr-2 py-1 overflow-y-auto">
+      {instruments.map((inst) => {
+        const short = inst.replace("-USDT-SWAP", "");
+        const isSelected = selected === inst;
+        return (
+          <button
+            key={inst}
+            onClick={() => onSelect(inst)}
+            className={`flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition ${
+              isSelected ? "bg-[var(--accent)]/20 text-[var(--accent)]" : "text-[var(--foreground)] hover:bg-[var(--card-bg)]"
+            }`}
           >
-            <option value="1m">1 min</option>
-            <option value="5m">5 min</option>
-            <option value="15m">15 min</option>
-            <option value="1H">1h</option>
-            <option value="4H">4h</option>
-          </select>
-          <div className="flex rounded-lg overflow-hidden border border-[var(--card-border)]">
-            <button
-              onClick={() => setChartType("candle")}
-              className={`px-3 py-1.5 text-sm flex items-center gap-1.5 ${chartType === "candle" ? "bg-[var(--accent)]/20 text-[var(--accent)]" : "text-[var(--muted)]"}`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Candles
-            </button>
-            <button
-              onClick={() => setChartType("line")}
-              className={`px-3 py-1.5 text-sm flex items-center gap-1.5 ${chartType === "line" ? "bg-[var(--accent)]/20 text-[var(--accent)]" : "text-[var(--muted)]"}`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              Line
-            </button>
-          </div>
+            <CryptoIcon symbol={inst} size={16} />
+            <span className="truncate">{short}</span>
+          </button>
+        );
+      })}
+    </aside>
+  );
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-180px)] min-h-[560px] w-full gap-2">
+      <div className="flex items-center gap-2 flex-wrap shrink-0 py-1">
+        <select
+          value={bar}
+          onChange={(e) => setBar(e.target.value)}
+          className="px-2 py-1.5 rounded bg-[var(--background)] border border-[var(--card-border)] text-sm"
+        >
+          <option value="1m">1 min</option>
+          <option value="5m">5 min</option>
+          <option value="15m">15 min</option>
+          <option value="1H">1h</option>
+          <option value="4H">4h</option>
+        </select>
+        <div className="flex rounded-lg overflow-hidden border border-[var(--card-border)]">
+          <button
+            onClick={() => setChartType("candle")}
+            className={`px-3 py-1.5 text-sm flex items-center gap-1.5 ${chartType === "candle" ? "bg-[var(--accent)]/20 text-[var(--accent)]" : "text-[var(--muted)]"}`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Candles
+          </button>
+          <button
+            onClick={() => setChartType("line")}
+            className={`px-3 py-1.5 text-sm flex items-center gap-1.5 ${chartType === "line" ? "bg-[var(--accent)]/20 text-[var(--accent)]" : "text-[var(--muted)]"}`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            Line
+          </button>
         </div>
-        <div className="flex-1 flex flex-col gap-2 min-h-0 overflow-hidden">
-          <div className="flex-1 min-h-0 flex flex-col">
-            <p className="flex items-center gap-2 text-xs text-[var(--muted)] shrink-0">
-              {selected1 && <CryptoIcon symbol={selected1} size={16} />}
-              {selected1 ? selected1.replace("-USDT-SWAP", "") : "Slot 1"}
-            </p>
-            <div className="flex-1 min-h-[240px]">
-              <InstrumentChart instId={selected1} bar={bar} chartType={chartType} />
+      </div>
+      <div className="flex-1 flex gap-2 min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col gap-2 min-h-0 min-w-0">
+          <div className="flex-1 flex min-h-[240px] overflow-hidden rounded-lg border border-[var(--card-border)]">
+            <InstrumentList selected={selected1} onSelect={setSelected1} />
+            <div className="flex-1 flex flex-col min-w-0">
+              <p className="flex items-center gap-2 text-xs text-[var(--muted)] shrink-0 px-2 pt-1">
+                {selected1 && <CryptoIcon symbol={selected1} size={16} />}
+                {selected1 ? selected1.replace("-USDT-SWAP", "") : "Chart 1"}
+              </p>
+              <div className="flex-1 min-h-0">
+                <InstrumentChart instId={selected1} bar={bar} chartType={chartType} />
+              </div>
             </div>
           </div>
-          <div className="flex-1 min-h-0 flex flex-col">
-            <p className="flex items-center gap-2 text-xs text-[var(--muted)] shrink-0">
-              {selected2 && <CryptoIcon symbol={selected2} size={16} />}
-              {selected2 ? selected2.replace("-USDT-SWAP", "") : "Slot 2"}
-            </p>
-            <div className="flex-1 min-h-[240px]">
-              <InstrumentChart instId={selected2} bar={bar} chartType={chartType} />
+          <div className="flex-1 flex min-h-[240px] overflow-hidden rounded-lg border border-[var(--card-border)]">
+            <InstrumentList selected={selected2} onSelect={setSelected2} />
+            <div className="flex-1 flex flex-col min-w-0">
+              <p className="flex items-center gap-2 text-xs text-[var(--muted)] shrink-0 px-2 pt-1">
+                {selected2 && <CryptoIcon symbol={selected2} size={16} />}
+                {selected2 ? selected2.replace("-USDT-SWAP", "") : "Chart 2"}
+              </p>
+              <div className="flex-1 min-h-0">
+                <InstrumentChart instId={selected2} bar={bar} chartType={chartType} />
+              </div>
             </div>
           </div>
         </div>
