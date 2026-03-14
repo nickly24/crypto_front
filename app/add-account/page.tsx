@@ -1,38 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/providers/auth";
 import { motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
 
-export default function LoginPage() {
-  const { user, loading, login } = useAuth();
+export default function AddAccountPage() {
+  const { login } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!loading && user) router.replace("/dashboard");
-  }, [user, loading, router]);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSubmitting(true);
-    const r = await login(email, password);
+    const r = await login(email, password, true);
     setSubmitting(false);
     if (r.ok) router.replace("/dashboard");
     else setError(r.error || "Sign in failed");
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-mesh flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
   }
 
   return (
@@ -43,7 +33,15 @@ export default function LoginPage() {
         transition={{ duration: 0.4 }}
         className="card-glass p-8 w-full max-w-md"
       >
-        <h1 className="text-2xl font-semibold mb-6">Sign in</h1>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--foreground)] mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to dashboard
+        </Link>
+        <h1 className="text-2xl font-semibold mb-2">Add account</h1>
+        <p className="text-sm text-[var(--muted)] mb-6">Sign in with another account to switch between them</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm text-[var(--muted)] mb-2">Email</label>
@@ -73,7 +71,7 @@ export default function LoginPage() {
             disabled={submitting}
             className="w-full py-3 rounded-lg bg-[var(--accent)] text-white font-medium hover:opacity-90 disabled:opacity-60 transition"
           >
-            {submitting ? "Signing in..." : "Sign in"}
+            {submitting ? "Adding account..." : "Add account"}
           </button>
         </form>
       </motion.div>

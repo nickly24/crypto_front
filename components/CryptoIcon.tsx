@@ -47,6 +47,7 @@ const COIN_ICONS: Record<string, string> = {
 };
 
 const CDN = "https://assets.coingecko.com/coins/images";
+const PLACEHOLDER_URL = "https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/red.jpg";
 
 type CryptoIconProps = {
   symbol: string;
@@ -54,13 +55,23 @@ type CryptoIconProps = {
   className?: string;
 };
 
+function PlaceholderIcon({ size, className }: { size: number; className?: string }) {
+  return (
+    <div
+      className={`shrink-0 rounded-full bg-cover bg-center ${className}`}
+      style={{ width: size, height: size, backgroundImage: `url(${PLACEHOLDER_URL})` }}
+      aria-hidden
+    />
+  );
+}
+
 export function CryptoIcon({ symbol, size = 20, className = "" }: CryptoIconProps) {
   const [error, setError] = useState(false);
   const key = symbolToKey(symbol);
-  if (!key || error) return null;
+  if (!key) return <PlaceholderIcon size={size} className={className} />;
 
   const path = COIN_ICONS[key];
-  if (!path) return null;
+  if (!path || error) return <PlaceholderIcon size={size} className={className} />;
 
   return (
     <img

@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   title: "PairTrading Panel",
   description: "PairTrading dashboard",
   viewport: { width: "device-width", initialScale: 1, maximumScale: 5 },
+  icons: {
+    icon: "/logo.ico",
+  },
 };
 
 export default function RootLayout({

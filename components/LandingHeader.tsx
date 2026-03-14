@@ -4,39 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/providers/auth";
 import { useTheme } from "@/providers/theme";
-import { HelpCircle, LogIn, LayoutDashboard, Settings, BarChart3, Sun, Moon } from "lucide-react";
-
-function Logo({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <rect width="36" height="36" rx="10" fill="url(#logo-bg)" />
-      <defs>
-        <linearGradient id="logo-bg" x1="0" y1="0" x2="36" y2="36">
-          <stop stopColor="#9ddb00" />
-          <stop offset="1" stopColor="#7ab800" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M8 24 L14 18 L20 20 L28 10"
-        stroke="white"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <path
-        d="M8 12 L14 18 L20 16 L28 26"
-        stroke="white"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-        opacity="0.5"
-      />
-      <path d="M25 10 L28 10 L28 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    </svg>
-  );
-}
+import { HelpCircle, LogIn, LayoutDashboard, Settings, BarChart3, Palette } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 const publicNav = [
   { href: "/", label: "Home", icon: null },
@@ -55,7 +24,7 @@ const appNav = [
 export function LandingHeader() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { openAppearancePicker } = useTheme();
 
   return (
     <header className="h-16 flex items-center justify-between px-6 lg:px-10 border-b border-white/5 bg-[var(--card-bg)]/60 backdrop-blur-xl sticky top-0 z-50">
@@ -87,11 +56,11 @@ export function LandingHeader() {
       </div>
       <div className="flex items-center gap-3">
         <button
-          onClick={toggleTheme}
+          onClick={openAppearancePicker}
           className="p-2 rounded-lg text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-hover)] transition"
-          title={theme === "light" ? "Dark theme" : "Light theme"}
+          title="Theme & appearance"
         >
-          {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+          <Palette className="w-5 h-5" />
         </button>
         <Link
           href="/guide"
@@ -110,7 +79,7 @@ export function LandingHeader() {
         ) : (
           <Link
             href="/login"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#9ddb00] text-slate-900 font-medium hover:opacity-90 transition"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent)] text-slate-900 font-medium hover:opacity-90 transition"
           >
             <LogIn className="w-4 h-4" />
             Sign in

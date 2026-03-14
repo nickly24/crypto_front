@@ -48,6 +48,7 @@ import {
   Zap,
 } from "lucide-react";
 import { CryptoIcon } from "@/components/CryptoIcon";
+import { useFiatRates } from "@/lib/useFiatRates";
 
 type BotStatusData = {
   alive?: boolean;
@@ -138,6 +139,7 @@ export default function DashboardPage() {
   const [spreadHistory, setSpreadHistory] = useState<Array<{ t: string; v: number }>>([]);
   const [pnlHistory, setPnlHistory] = useState<Array<{ t: string; v: number }>>([]);
   const pollVersionRef = useRef(0);
+  const fiatRates = useFiatRates();
 
   function fetchConfig() {
     getBotConfig().then((r) => {
@@ -388,42 +390,64 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <CryptoIcon symbol="USDT" size={28} />
             <p className="text-3xl font-semibold">
-              ${balance.toFixed(2)}
+              {balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
           <p className="text-xs text-[var(--muted)] mt-1">
-            Available: ${available.toFixed(2)}
+            Available: {available.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="p-2 rounded bg-[var(--background)]/50 text-center">
               <p className="text-xs text-[var(--muted)]">PnL Long</p>
-              <p className={`text-sm font-semibold ${pnlLong >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                {pnlLong >= 0 ? "+" : ""}{pnlLong.toFixed(3)}%
+              <p className={`text-sm font-semibold ${positionOpen ? (pnlLong >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]") : "text-[var(--muted)]"}`}>
+                {positionOpen ? `${pnlLong >= 0 ? "+" : ""}${pnlLong.toFixed(3)}%` : "—"}
               </p>
             </div>
             <div className="p-2 rounded bg-[var(--background)]/50 text-center">
               <p className="text-xs text-[var(--muted)]">PnL Short</p>
-              <p className={`text-sm font-semibold ${pnlShort >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                {pnlShort >= 0 ? "+" : ""}{pnlShort.toFixed(3)}%
+              <p className={`text-sm font-semibold ${positionOpen ? (pnlShort >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]") : "text-[var(--muted)]"}`}>
+                {positionOpen ? `${pnlShort >= 0 ? "+" : ""}${pnlShort.toFixed(3)}%` : "—"}
               </p>
             </div>
             <div className="p-2 rounded bg-[var(--background)]/50 text-center">
               <p className="text-xs text-[var(--muted)]">PnL Total</p>
-              <p className={`text-sm font-semibold ${pnl >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                {pnl >= 0 ? "+" : ""}{pnl.toFixed(3)}%
+              <p className={`text-sm font-semibold ${positionOpen ? (pnl >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]") : "text-[var(--muted)]"}`}>
+                {positionOpen ? `${pnl >= 0 ? "+" : ""}${pnl.toFixed(3)}%` : "—"}
               </p>
               {positionOpen && pnlUsdt != null && (
                 <p className={`text-xs mt-0.5 ${pnlUsdt >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                  {pnlUsdt >= 0 ? "+" : ""}${pnlUsdt.toFixed(2)}
+                  {pnlUsdt >= 0 ? "+" : ""}{pnlUsdt.toLocaleString("en-US", { minimumFractionDigits: 2 })} USDT
                 </p>
               )}
               {positionOpen && positionsBreakdown && positionsBreakdown.totalCommission !== 0 && (
                 <p className="text-xs mt-0.5 text-[var(--muted)]">
-                  Fee: {positionsBreakdown.totalCommission >= 0 ? "+" : ""}${positionsBreakdown.totalCommission.toFixed(2)}
+                  Fee: {positionsBreakdown.totalCommission >= 0 ? "+" : ""}{positionsBreakdown.totalCommission.toFixed(2)}
                 </p>
               )}
             </div>
           </div>
+          {fiatRates && (
+            <div className="mt-4 pt-4 border-t border-[var(--card-border)] flex flex-wrap gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-[var(--muted)]/80">$</span>
+                <span className="text-xs text-[var(--muted)]/90">
+                  {balance.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-[var(--muted)]/80">€</span>
+                <span className="text-xs text-[var(--muted)]/90">
+                  {(balance * fiatRates.EUR).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} EUR
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[var(--muted)]/80">₽</span>
+                <span className="text-xs text-[var(--muted)]/90">
+                  {(balance * fiatRates.RUB).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} RUB
+                </span>
+              </div>
+            </div>
+          )}
         </motion.div>
 
         {/* Spread & Chart */}
@@ -826,20 +850,20 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Quotes Table */}
-        <motion.div {...anim(0.2)} className="card-glass p-4 md:p-6">
+        <motion.div {...anim(0.2)} className="card-glass p-4 md:p-6 min-w-0 overflow-hidden">
           <h2 className="text-sm font-medium text-[var(--muted)] mb-4">Instrument quotes</h2>
           {quotesArr.length > 0 ? (
-            <div className="space-y-1.5 max-h-64 overflow-y-auto">
+            <div className="space-y-1.5 overflow-x-hidden">
               {quotesArr.map((q) => (
-                <div key={q.symbol} className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--background)]/50 hover:bg-[var(--background)]/80 transition">
-                  <span className="flex items-center gap-2 text-sm font-medium">
+                <div key={q.symbol} className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-[var(--background)]/50 hover:bg-[var(--background)]/80 transition min-w-0">
+                  <span className="flex items-center gap-2 text-sm font-medium min-w-0 shrink">
                     <CryptoIcon symbol={q.symbol} size={20} />
-                    {q.symbol.replace("-USDT-SWAP", "")}
+                    <span className="truncate">{q.symbol.replace("-USDT-SWAP", "")}</span>
                   </span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-mono">${q.price.toFixed(q.price < 1 ? 5 : 2)}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-sm font-mono whitespace-nowrap">${q.price.toFixed(q.price < 1 ? 5 : 2)}</span>
                     {q.change != null && (
-                      <span className={`text-xs font-medium w-16 text-right ${q.change >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                      <span className={`text-xs font-medium w-14 text-right ${q.change >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
                         {q.change >= 0 ? "+" : ""}{q.change.toFixed(2)}%
                       </span>
                     )}

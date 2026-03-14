@@ -9,43 +9,7 @@ import {
   HelpCircle,
   Bookmark,
 } from "lucide-react";
-
-function Logo({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 36 36"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-    >
-      <rect width="36" height="36" rx="10" fill="url(#logo-bg)" />
-      <defs>
-        <linearGradient id="logo-bg" x1="0" y1="0" x2="36" y2="36">
-          <stop stopColor="#9ddb00" />
-          <stop offset="1" stopColor="#7ab800" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M8 24 L14 18 L20 20 L28 10"
-        stroke="white"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <path
-        d="M8 12 L14 18 L20 16 L28 26"
-        stroke="white"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-        opacity="0.5"
-      />
-      <path d="M25 10 L28 10 L28 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    </svg>
-  );
-}
+import { Logo } from "@/components/Logo";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
