@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createChart, IChartApi, CandlestickSeries, LineSeries } from "lightweight-charts";
 import { getChartCandles } from "@/lib/api";
+import { utcMsToLocalChartTime } from "@/lib/chart-time";
 import { Plus, Trash2 } from "lucide-react";
 
 const DRAWINGS_PREFIX = "chart-drawings-inst-";
@@ -85,17 +86,17 @@ export function InstrumentChart({ instId, bar = "1m", chartType = "candle" }: In
       let series: any;
       if (chartType === "candle") {
         series = chart.addSeries(CandlestickSeries, {
-          upColor: "#22c55e",
-          downColor: "#ef4444",
+          upColor: "#9ddb00",
+          downColor: "#db7500",
           borderVisible: false,
-          wickUpColor: "#22c55e",
-          wickDownColor: "#ef4444",
+          wickUpColor: "#9ddb00",
+          wickDownColor: "#db7500",
         });
         const data = r.data.candles
           .slice()
           .reverse()
           .map((c) => ({
-            time: Math.floor(c.ts / 1000) as any,
+            time: utcMsToLocalChartTime(c.ts) as any,
             open: c.o,
             high: c.h,
             low: c.l,
@@ -104,14 +105,14 @@ export function InstrumentChart({ instId, bar = "1m", chartType = "candle" }: In
         series.setData(data);
       } else {
         series = chart.addSeries(LineSeries, {
-          color: "#3b82f6",
+          color: "#9ddb00",
           lineWidth: 2,
         });
         const data = r.data.candles
           .slice()
           .reverse()
           .map((c) => ({
-            time: Math.floor(c.ts / 1000) as any,
+            time: utcMsToLocalChartTime(c.ts) as any,
             value: c.c,
           }));
         series.setData(data);
@@ -139,7 +140,7 @@ export function InstrumentChart({ instId, bar = "1m", chartType = "candle" }: In
   if (!instId) {
     return (
       <div className="h-80 flex items-center justify-center text-[var(--muted)] rounded-lg border border-dashed border-[var(--card-border)]">
-        Выберите инструмент
+        Select instrument
       </div>
     );
   }
@@ -149,13 +150,13 @@ export function InstrumentChart({ instId, bar = "1m", chartType = "candle" }: In
       <div className="flex flex-wrap items-center gap-2 shrink-0">
         <input
           type="text"
-          placeholder="Цена линии"
+          placeholder="Line price"
           value={newLineValue}
           onChange={(e) => setNewLineValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addLine()}
           className="w-28 px-2 py-1 text-xs rounded bg-[var(--background)] border border-[var(--card-border)]"
         />
-        <button onClick={addLine} className="p-1 rounded hover:bg-[var(--card-bg)] text-[var(--accent)]" title="Добавить линию">
+        <button onClick={addLine} className="p-1 rounded hover:bg-[var(--card-bg)] text-[var(--accent)]" title="Add line">
           <Plus className="w-4 h-4" />
         </button>
         {drawings.map((v, i) => (

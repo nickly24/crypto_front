@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createChart, IChartApi, LineSeries, LineData } from "lightweight-charts";
 import { getChartSpread, botStatus } from "@/lib/api";
+import { utcMsToLocalChartTime, utcToLocalChartTime } from "@/lib/chart-time";
 
 const LIVE_WINDOW_MS = 10 * 60 * 1000; // 10 минут
 const POLL_MS = 1000;
@@ -39,7 +40,7 @@ export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: numbe
       height: 160,
     });
     const lineSeries = chart.addSeries(LineSeries, {
-      color: "#3b82f6",
+      color: "#9ddb00",
       lineWidth: 2,
       priceFormat: { type: "percent", precision: 4, minMove: 0.0001 },
     });
@@ -57,19 +58,23 @@ export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: numbe
       if (!r.ok || !r.data || !seriesRef.current) return;
       const now = Date.now();
       const cutoff = now - LIVE_WINDOW_MS;
+      type WithRealMs = LineData & { _realMs?: number };
       const past = r.data.points
         .map((p) => {
-          const t = new Date(p.ts).getTime();
-          return { time: Math.floor(t / 1000) as LineData["time"], value: p.spread_pct };
+          const realMs = new Date(p.ts).getTime();
+          return {
+            time: utcMsToLocalChartTime(realMs) as LineData["time"],
+            value: p.spread_pct,
+            _realMs: realMs,
+          };
         })
         .filter((d) => {
           if (d.value == null || Number.isNaN(d.value)) return false;
-          const ts = typeof d.time === "number" ? d.time * 1000 : new Date(d.time as string).getTime();
-          return ts >= cutoff;
+          return d._realMs! >= cutoff;
         });
       dataRef.current = past;
       if (past.length > 0) {
-        seriesRef.current.setData(past);
+        seriesRef.current.setData(past.map(({ time, value }) => ({ time, value })));
       }
     });
   }, []);
@@ -78,12 +83,13 @@ export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: numbe
     const addLivePoint = (value: number) => {
       const series = seriesRef.current;
       if (!series) return;
-      const t = Math.floor(Date.now() / 1000);
+      const now = Date.now();
+      const t = utcToLocalChartTime(Math.floor(now / 1000));
       const point: LineData = { time: t as LineData["time"], value };
-      dataRef.current = [...dataRef.current.filter((d) => {
-        const ts = typeof d.time === "number" ? d.time * 1000 : new Date(d.time as string).getTime();
-        return ts >= Date.now() - LIVE_WINDOW_MS;
-      }), point];
+      type WithRealMs = LineData & { _realMs?: number };
+      const trimmed = (dataRef.current as WithRealMs[]).filter((d) => (d._realMs ?? 0) >= now - LIVE_WINDOW_MS);
+      const newPoint: WithRealMs = { ...point, _realMs: now };
+      dataRef.current = [...trimmed, newPoint];
       series.update(point);
     };
 
@@ -102,13 +108,13 @@ export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: numbe
     if (!series || !spreadLevels) return;
     const lines: ReturnType<typeof series.createPriceLine>[] = [];
     lines.push(series.createPriceLine({ price: spreadLevels.entry, color: "#f59e0b", lineWidth: 1, lineStyle: 2 }));
-    if (spreadLevels.sl != null) lines.push(series.createPriceLine({ price: spreadLevels.sl, color: "#ef4444", lineWidth: 1, lineStyle: 2 }));
+    if (spreadLevels.sl != null) lines.push(series.createPriceLine({ price: spreadLevels.sl, color: "#db7500", lineWidth: 1, lineStyle: 2 }));
     return () => lines.forEach((pl) => series.removePriceLine(pl));
   }, [spreadLevels]);
 
   return (
     <div className="flex flex-col gap-1">
-      <p className="text-xs text-[var(--muted)]">Live (10 мин)</p>
+      <p className="text-xs text-[var(--muted)]">Live (10 min)</p>
       <div ref={containerRef} className="w-full rounded-lg overflow-hidden border border-[var(--card-border)]" />
     </div>
   );

@@ -24,7 +24,7 @@ export default function LoginPage() {
     const r = await login(email, password);
     setSubmitting(false);
     if (r.ok) router.replace("/dashboard");
-    else setError(r.error || "Ошибка входа");
+        else setError(r.error || "Sign in failed");
   }
 
   if (loading) {
@@ -43,7 +43,7 @@ export default function LoginPage() {
         transition={{ duration: 0.4 }}
         className="card-glass p-8 w-full max-w-md"
       >
-        <h1 className="text-2xl font-semibold mb-6">Вход</h1>
+        <h1 className="text-2xl font-semibold mb-6">Sign in</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm text-[var(--muted)] mb-2">Email</label>
@@ -56,7 +56,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm text-[var(--muted)] mb-2">Пароль</label>
+            <label className="block text-sm text-[var(--muted)] mb-2">Password</label>
             <input
               type="password"
               value={password}
@@ -73,7 +73,7 @@ export default function LoginPage() {
             disabled={submitting}
             className="w-full py-3 rounded-lg bg-[var(--accent)] text-white font-medium hover:opacity-90 disabled:opacity-60 transition"
           >
-            {submitting ? "Вход..." : "Войти"}
+            {submitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
       </motion.div>

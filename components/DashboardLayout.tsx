@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth";
 import { Header } from "./Header";
+import { Sidebar } from "./Sidebar";
+import { BottomNav } from "./BottomNav";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -15,7 +17,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-mesh flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -24,9 +26,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-mesh flex flex-col">
-      <Header />
-      <main className="flex-1 p-6">{children}</main>
+    <div className="min-h-screen flex bg-[var(--background)]">
+      <Sidebar />
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+        <Header />
+        <main className="flex-1 p-4 md:p-6 overflow-auto pb-28 md:pb-6">{children}</main>
+        <BottomNav />
+      </div>
     </div>
   );
 }

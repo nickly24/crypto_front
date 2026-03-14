@@ -52,20 +52,20 @@ function ChartPageContent() {
               className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[var(--card-bg)] text-[var(--muted)] hover:text-[var(--foreground)] transition"
             >
               <ArrowLeft className="w-4 h-4" />
-              Назад
+              Back
             </Link>
             <div className="flex gap-1 p-1 rounded-lg bg-[var(--card-bg)] border border-[var(--card-border)]">
               <Link
                 href="/dashboard/chart?mode=spread"
                 className={`px-4 py-2 rounded-md text-sm font-medium transition ${mode === "spread" ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"}`}
               >
-                Спред
+                Spread
               </Link>
               <Link
                 href="/dashboard/chart?mode=instruments"
                 className={`px-4 py-2 rounded-md text-sm font-medium transition ${mode === "instruments" ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--foreground)]"}`}
               >
-                Инструменты
+                Instruments
               </Link>
             </div>
           </div>
@@ -76,7 +76,7 @@ function ChartPageContent() {
               className="px-3 py-2 rounded-lg bg-[var(--card-bg)] border border-[var(--card-border)] text-sm"
             >
               {[1, 3, 5, 10, 24].map((h) => (
-                <option key={h} value={h}>{h} ч</option>
+                <option key={h} value={h}>{h}h</option>
               ))}
             </select>
           )}
@@ -97,7 +97,7 @@ function ChartPageContent() {
 
 export default function ChartPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[var(--muted)]">Загрузка...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[var(--muted)]">Loading...</div>}>
       <ChartPageContent />
     </Suspense>
   );

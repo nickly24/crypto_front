@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createChart, IChartApi, ISeriesApi, LineSeries, LineData } from "lightweight-charts";
 import { getChartSpread } from "@/lib/api";
+import { utcMsToLocalChartTime } from "@/lib/chart-time";
 import { Plus, Trash2 } from "lucide-react";
 import { SpreadLiveMini } from "./SpreadLiveMini";
 
@@ -62,7 +63,7 @@ export function SpreadChart({ hours = 10, spreadLevels }: SpreadChartProps) {
       },
     });
     const lineSeries = chart.addSeries(LineSeries, {
-      color: "#3b82f6",
+      color: "#9ddb00",
       lineWidth: 2,
       priceFormat: { type: "percent", precision: 4, minMove: 0.0001 },
     });
@@ -82,7 +83,7 @@ export function SpreadChart({ hours = 10, spreadLevels }: SpreadChartProps) {
       setLoading(false);
       if (r.ok && r.data && seriesRef.current) {
         const data: LineData[] = r.data.points.map((p) => ({
-          time: Math.floor(new Date(p.ts).getTime() / 1000) as any,
+          time: utcMsToLocalChartTime(new Date(p.ts).getTime()) as LineData["time"],
           value: p.spread_pct,
         }));
         setPointsCount(data.length);
@@ -97,7 +98,7 @@ export function SpreadChart({ hours = 10, spreadLevels }: SpreadChartProps) {
     const priceLines: { pl: ReturnType<typeof lineSeries.createPriceLine> }[] = [];
     if (spreadLevels) {
       priceLines.push({ pl: lineSeries.createPriceLine({ price: spreadLevels.entry, color: "#f59e0b", lineWidth: 2, lineStyle: 2 }) });
-      if (spreadLevels.sl != null) priceLines.push({ pl: lineSeries.createPriceLine({ price: spreadLevels.sl, color: "#ef4444", lineWidth: 2, lineStyle: 2 }) });
+      if (spreadLevels.sl != null) priceLines.push({ pl: lineSeries.createPriceLine({ price: spreadLevels.sl, color: "#db7500", lineWidth: 2, lineStyle: 2 }) });
     }
     drawings.forEach((d) => {
       priceLines.push({ pl: lineSeries.createPriceLine({ price: d.value, color: d.color || "#6366f1", lineWidth: 1, lineStyle: 2 }) });
@@ -126,16 +127,16 @@ export function SpreadChart({ hours = 10, spreadLevels }: SpreadChartProps) {
         <SpreadLiveMini spreadLevels={spreadLevels} />
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-[var(--muted)]">Линии:</span>
+        <span className="text-xs text-[var(--muted)]">Lines:</span>
         <input
           type="text"
-          placeholder="Значение % (напр. -0.5)"
+          placeholder="Value % (e.g. -0.5)"
           value={newLineValue}
           onChange={(e) => setNewLineValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addLine()}
           className="w-36 px-2 py-1 text-sm rounded bg-[var(--background)] border border-[var(--card-border)]"
         />
-        <button onClick={addLine} className="p-1.5 rounded hover:bg-[var(--card-bg)] text-[var(--accent)]" title="Добавить линию">
+        <button onClick={addLine} className="p-1.5 rounded hover:bg-[var(--card-bg)] text-[var(--accent)]" title="Add line">
           <Plus className="w-4 h-4" />
         </button>
         {drawings.map((d, i) => (
@@ -150,13 +151,13 @@ export function SpreadChart({ hours = 10, spreadLevels }: SpreadChartProps) {
       <div className="relative h-[calc(100vh-280px)] min-h-[400px]">
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-[var(--card-bg)]/80 rounded-lg z-10 text-[var(--muted)]">
-            Загрузка...
+            Loading...
           </div>
         )}
         <div ref={containerRef} className="absolute inset-0 w-full h-full" />
         {!loading && pointsCount === 0 && (
           <div className="absolute inset-0 flex items-center justify-center bg-[var(--card-bg)]/80 rounded-lg text-[var(--muted)] text-center px-4">
-            Нет данных за выбранный период. Запустите бота для записи спреда.
+            No data for the selected period. Start the bot to record spread.
           </div>
         )}
       </div>

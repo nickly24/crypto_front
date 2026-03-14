@@ -1,21 +1,48 @@
 @import "tailwindcss";
 
-:root {
-  --background: #0c1222;
+/* Dark theme (default) - #1e2120 base */
+:root,
+[data-theme="dark"] {
+  --background: #1e2120;
   --foreground: #e8ecf1;
-  --card-bg: #141c2e;
-  --card-border: rgba(59, 130, 246, 0.15);
-  --accent: #3b82f6;
-  --accent-dim: rgba(59, 130, 246, 0.5);
-  --positive: #22c55e;
-  --negative: #ef4444;
+  --card-bg: #262a29;
+  --card-border: rgba(255, 255, 255, 0.06);
+  --accent: #9ddb00;
+  --accent-dim: rgba(157, 219, 0, 0.5);
+  --positive: #9ddb00;
+  --negative: #db7500;
   --muted: #64748b;
+  --sidebar-bg: #222624;
+  --sidebar-active-bg: rgba(157, 219, 0, 0.12);
+  --sidebar-active-text: var(--accent);
+  --sidebar-hover: rgba(255, 255, 255, 0.05);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Light theme (Tracle-style) */
+[data-theme="light"] {
+  --background: #f8fafc;
+  --foreground: #1e293b;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --accent: #9ddb00;
+  --accent-dim: rgba(157, 219, 0, 0.5);
+  --positive: #9ddb00;
+  --negative: #db7500;
+  --muted: #64748b;
+  --sidebar-bg: #ffffff;
+  --sidebar-active-bg: #1e293b;
+  --sidebar-active-text: #ffffff;
+  --sidebar-hover: #f1f5f9;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -25,15 +52,29 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* subtle geometric background pattern */
-.bg-mesh {
+/* Dark theme mesh */
+[data-theme="dark"] .bg-mesh,
+:root:not([data-theme="light"]) .bg-mesh {
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 130, 246, 0.12), transparent),
-    linear-gradient(to bottom, transparent, rgba(15, 23, 42, 0.8));
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(157, 219, 0, 0.08), transparent),
+    linear-gradient(to bottom, transparent, rgba(30, 33, 32, 0.85));
+}
+
+/* Light theme mesh */
+[data-theme="light"] .bg-mesh {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(157, 219, 0, 0.08), transparent),
+    linear-gradient(to bottom, transparent, rgba(248, 250, 252, 0.9));
 }
 
 .card-glass {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Mobile safe area for bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }

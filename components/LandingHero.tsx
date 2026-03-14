@@ -106,7 +106,7 @@ export function LandingHero() {
           transition={{ duration: 0.6 }}
           className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6"
         >
-          <span className="text-white">Автоматический </span>
+          <span className="text-white">Automated </span>
           <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent">
             pair trading
           </span>
@@ -117,8 +117,8 @@ export function LandingHero() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-lg text-[var(--muted)] max-w-2xl mx-auto mb-10"
         >
-          Торгуйте парами криптовалют на спреде. Бот входит и выходит по настраиваемым правилам.
-          Минимизируйте риск, максимизируйте стабильную доходность.
+          Trade crypto pairs on the spread. The bot enters and exits per your rules.
+          Minimize risk, maximize steady returns.
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -128,15 +128,15 @@ export function LandingHero() {
         >
           <Link
             href="/login"
-            className="px-8 py-3 rounded-xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white font-semibold hover:opacity-90 transition shadow-lg shadow-indigo-500/25"
+            className="px-8 py-3 rounded-xl bg-[#9ddb00] text-slate-900 font-semibold hover:opacity-90 transition shadow-lg shadow-[#9ddb00]/25"
           >
-            Начать
+            Get started
           </Link>
           <Link
             href="/guide"
             className="px-8 py-3 rounded-xl border border-white/20 text-white/90 font-medium hover:bg-white/5 transition"
           >
-            Как это работает
+            How it works
           </Link>
         </motion.div>
       </div>

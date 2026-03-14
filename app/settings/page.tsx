@@ -40,15 +40,15 @@ const paramDefs: Array<{
   min?: number;
   max?: number;
 }> = [
-  { key: "entry_spread_pct", label: "Вход спред", type: "number", suffix: "%", step: 0.01, min: 0 },
-  { key: "take_profit_pct", label: "Тейк-профит", type: "number", suffix: "%", step: 0.01, min: 0 },
-  { key: "stop_loss_pct", label: "Стоп-лосс", type: "number", suffix: "%", step: 0.1, min: 0 },
-  { key: "stop_loss_enabled", label: "Стоп-лосс включён", type: "boolean" },
-  { key: "position_size_pct", label: "Размер позиции", type: "number", suffix: "%", step: 1, min: 1 },
-  { key: "orders_per_trade", label: "Ордеров на сделку", type: "number", step: 1, min: 1 },
-  { key: "dca_count", label: "Количество DCA", type: "number", step: 1, min: 0 },
-  { key: "dca_step_pct", label: "Шаг DCA", type: "number", suffix: "%", step: 0.1, min: 0 },
-  { key: "leverage", label: "Кредитное плечо", type: "number", suffix: "x", step: 1, min: 1, max: 125 },
+  { key: "entry_spread_pct", label: "Entry spread", type: "number", suffix: "%", step: 0.01, min: 0 },
+  { key: "take_profit_pct", label: "Take profit", type: "number", suffix: "%", step: 0.01, min: 0 },
+  { key: "stop_loss_pct", label: "Stop loss", type: "number", suffix: "%", step: 0.1, min: 0 },
+  { key: "stop_loss_enabled", label: "Stop loss enabled", type: "boolean" },
+  { key: "position_size_pct", label: "Position size", type: "number", suffix: "%", step: 1, min: 1 },
+  { key: "orders_per_trade", label: "Orders per trade", type: "number", step: 1, min: 1 },
+  { key: "dca_count", label: "DCA count", type: "number", step: 1, min: 0 },
+  { key: "dca_step_pct", label: "DCA step", type: "number", suffix: "%", step: 0.1, min: 0 },
+  { key: "leverage", label: "Leverage", type: "number", suffix: "x", step: 1, min: 1, max: 125 },
 ];
 
 const inputClass =
@@ -111,7 +111,7 @@ function BasketAutocomplete({
       {open && (focused || suggestions.length > 0) && (
         <ul className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-auto rounded-lg bg-[var(--card-bg)] border border-[var(--card-border)] shadow-lg py-1">
           {suggestions.length === 0 ? (
-            <li className="px-4 py-2 text-sm text-[var(--muted)]">Нет совпадений</li>
+            <li className="px-4 py-2 text-sm text-[var(--muted)]">No matches</li>
           ) : (
             suggestions.map((inst) => (
               <li
@@ -164,7 +164,7 @@ export default function SettingsPage() {
         syncEditState(r.data);
       } else {
         setConfig(null);
-        setConfigError(r.error || "Ошибка загрузки конфига");
+        setConfigError(r.error || "Config load error");
       }
     });
   }, []);
@@ -226,25 +226,25 @@ export default function SettingsPage() {
     });
     setSavingConfig(false);
     if (r.ok) {
-      setSaveMsg({ ok: true, text: "Сохранено" });
+      setSaveMsg({ ok: true, text: "Saved" });
       setEditing(false);
       loadConfig();
     } else {
-      setSaveMsg({ ok: false, text: r.error || "Ошибка сохранения" });
+      setSaveMsg({ ok: false, text: r.error || "Save error" });
     }
   }
 
   async function handleResetConfig() {
-    if (!confirm("Сбросить конфиг к значениям по умолчанию?")) return;
+    if (!confirm("Reset config to defaults?")) return;
     setSavingConfig(true);
     const r = await resetBotConfig();
     setSavingConfig(false);
     if (r.ok) {
-      setSaveMsg({ ok: true, text: "Конфиг сброшен" });
+      setSaveMsg({ ok: true, text: "Config reset" });
       setEditing(false);
       loadConfig();
     } else {
-      setSaveMsg({ ok: false, text: r.error || "Ошибка сброса" });
+      setSaveMsg({ ok: false, text: r.error || "Reset error" });
     }
   }
 
@@ -284,31 +284,31 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <h1 className="text-2xl font-semibold mb-6">Настройки</h1>
+      <h1 className="text-2xl font-semibold mb-6">Settings</h1>
 
       {/* OKX Keys */}
       <motion.div {...anim(0)} className="card-glass p-6 max-w-3xl">
         <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
           <Key className="w-5 h-5" />
-          Ключи OKX
+          OKX Keys
         </h2>
         {okxKeys && (
           <p className="text-sm text-[var(--muted)] mb-4">
-            API ключ: {okxKeys.masked_api_key || "не задан"}
+            API key: {okxKeys.masked_api_key || "not set"}
           </p>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm text-[var(--muted)] mb-2">API Key</label>
-            <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Новый ключ" className={inputClass} />
+            <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="New key" className={inputClass} />
           </div>
           <div>
             <label className="block text-sm text-[var(--muted)] mb-2">Secret Key</label>
-            <input type="password" value={secretKey} onChange={(e) => setSecretKey(e.target.value)} placeholder="Новый секрет" className={inputClass} />
+            <input type="password" value={secretKey} onChange={(e) => setSecretKey(e.target.value)} placeholder="New secret" className={inputClass} />
           </div>
           <div>
             <label className="block text-sm text-[var(--muted)] mb-2">Passphrase</label>
-            <input type="password" value={passphrase} onChange={(e) => setPassphrase(e.target.value)} placeholder="Новый passphrase" className={inputClass} />
+            <input type="password" value={passphrase} onChange={(e) => setPassphrase(e.target.value)} placeholder="New passphrase" className={inputClass} />
           </div>
         </div>
         <button
@@ -317,7 +317,7 @@ export default function SettingsPage() {
           className="flex items-center gap-2 px-4 py-2.5 mt-4 rounded-lg bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-50 transition"
         >
           <Save className="w-4 h-4" />
-          {savingKeys ? "Сохранение..." : "Сохранить ключи"}
+          {savingKeys ? "Saving..." : "Save keys"}
         </button>
       </motion.div>
 
@@ -334,7 +334,7 @@ export default function SettingsPage() {
             {!editing ? (
               <button onClick={startEditing} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent)] text-white hover:opacity-90 transition">
                 <Pencil className="w-4 h-4" />
-                Редактировать конфиг
+                Edit config
               </button>
             ) : (
               <>
@@ -344,15 +344,15 @@ export default function SettingsPage() {
                   className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--positive)] text-white hover:opacity-90 disabled:opacity-50 transition"
                 >
                   <Check className="w-4 h-4" />
-                  {savingConfig ? "Сохранение..." : "Сохранить"}
+                  {savingConfig ? "Saving..." : "Save"}
                 </button>
                 <button onClick={cancelEditing} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--card-bg)] border border-[var(--card-border)] text-[var(--foreground)] hover:opacity-80 transition">
                   <X className="w-4 h-4" />
-                  Отмена
+                  Cancel
                 </button>
                 <button onClick={handleResetConfig} disabled={savingConfig} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--negative)]/20 text-[var(--negative)] hover:bg-[var(--negative)]/30 disabled:opacity-50 transition ml-auto">
                   <RotateCcw className="w-4 h-4" />
-                  Сброс
+                  Reset
                 </button>
               </>
             )}
@@ -374,7 +374,7 @@ export default function SettingsPage() {
           <motion.div {...anim(0.1)} className="card-glass p-6 max-w-3xl mt-6">
             <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
               <Layers className="w-5 h-5" />
-              Корзины (пары)
+              Baskets (pairs)
             </h2>
             <div className="space-y-3">
               {(editing ? editBaskets : config.baskets).map((b, i) => (
@@ -385,7 +385,7 @@ export default function SettingsPage() {
                       <BasketAutocomplete
                         value={b.basket1}
                         onChange={(v) => setBasket(i, "basket1", v)}
-                        placeholder="Символ корзины 1 (начните вводить)"
+                        placeholder="Basket 1 symbol (start typing)"
                         instruments={instruments}
                         inputClass={`${inputClass} flex-1`}
                       />
@@ -393,7 +393,7 @@ export default function SettingsPage() {
                       <BasketAutocomplete
                         value={b.basket2}
                         onChange={(v) => setBasket(i, "basket2", v)}
-                        placeholder="Символ корзины 2 (начните вводить)"
+                        placeholder="Basket 2 symbol (start typing)"
                         instruments={instruments}
                         inputClass={`${inputClass} flex-1`}
                       />
@@ -411,13 +411,13 @@ export default function SettingsPage() {
                 </div>
               ))}
               {(editing ? editBaskets : config.baskets).length === 0 && (
-                <p className="text-sm text-[var(--muted)]">Нет корзин</p>
+                <p className="text-sm text-[var(--muted)]">No baskets</p>
               )}
             </div>
             {editing && (
               <button onClick={addBasket} className="flex items-center gap-2 mt-4 px-4 py-2 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20 transition">
                 <Plus className="w-4 h-4" />
-                Добавить пару
+                Add pair
               </button>
             )}
           </motion.div>
@@ -426,7 +426,7 @@ export default function SettingsPage() {
           <motion.div {...anim(0.15)} className="card-glass p-6 max-w-3xl mt-6">
             <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
               <Settings2 className="w-5 h-5" />
-              Параметры входа и спреда
+              Entry & spread params
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {paramDefs.map((pd) => {
@@ -445,7 +445,7 @@ export default function SettingsPage() {
                         </button>
                       ) : (
                         <span className={`text-sm font-semibold ${val ? "text-[var(--positive)]" : "text-[var(--muted)]"}`}>
-                          {val ? "Да" : "Нет"}
+                          {val ? "Yes" : "No"}
                         </span>
                       )
                     ) : editing ? (
@@ -475,11 +475,11 @@ export default function SettingsPage() {
 
             {/* Modes */}
             <div className="mt-6 pt-4 border-t border-[var(--card-border)]">
-              <p className="text-sm text-[var(--muted)] mb-3">Режимы</p>
+              <p className="text-sm text-[var(--muted)] mb-3">Modes</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  { key: "simulation_mode", label: "Режим симуляции" },
-                  { key: "no_new_position", label: "Без новых позиций" },
+                  { key: "simulation_mode", label: "Simulation mode" },
+                  { key: "no_new_position", label: "No new positions" },
                 ].map(({ key, label }) => {
                   const val = editing ? editModes[key] : config.modes[key];
                   return (
@@ -495,7 +495,7 @@ export default function SettingsPage() {
                         </button>
                       ) : (
                         <span className={`text-sm font-semibold ${val ? "text-[var(--accent)]" : "text-[var(--muted)]"}`}>
-                          {val ? "Вкл" : "Выкл"}
+                          {val ? "On" : "Off"}
                         </span>
                       )}
                     </div>

@@ -5,20 +5,20 @@ import { motion } from "framer-motion";
 
 const steps = [
   {
-    title: "Подключите OKX",
-    desc: "В настройках добавьте API-ключи от демо или реального аккаунта OKX. Не забудьте указать IP в whitelist.",
+    title: "Connect OKX",
+    desc: "In Settings, add API keys from demo or live OKX account. Don't forget to add your IP to the whitelist.",
   },
   {
-    title: "Настройте корзины",
-    desc: "Выберите пары инструментов (например, BTC vs ETH, BNB vs XRP). Бот будет торговать спред между ними.",
+    title: "Configure baskets",
+    desc: "Select instrument pairs (e.g. BTC vs ETH, BNB vs XRP). The bot will trade the spread between them.",
   },
   {
-    title: "Задайте параметры",
-    desc: "Порог входа (%), тейк-профит, стоп-лосс, размер позиции и плечо — всё настраивается под вашу стратегию.",
+    title: "Set parameters",
+    desc: "Entry threshold (%), take profit, stop loss, position size and leverage — all configurable for your strategy.",
   },
   {
-    title: "Запустите бота",
-    desc: "Нажмите «Старт» на дашборде. Бот подключится к OKX, начнёт получать котировки и входить в сделки по вашим правилам.",
+    title: "Start the bot",
+    desc: "Click 'Start' on the dashboard. The bot connects to OKX, receives quotes and enters trades per your rules.",
   },
 ];
 
@@ -32,7 +32,7 @@ export default function GuidePage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-3xl font-bold mb-2"
         >
-          Гайд по платформе
+          Platform guide
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -40,7 +40,7 @@ export default function GuidePage() {
           transition={{ delay: 0.1 }}
           className="text-[var(--muted)] mb-12"
         >
-          Краткая инструкция для быстрого старта
+          Quick start guide
         </motion.p>
 
         <div className="space-y-8">

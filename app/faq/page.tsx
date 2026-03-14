@@ -6,24 +6,24 @@ import { ChevronDown } from "lucide-react";
 
 const faqs = [
   {
-    q: "Что такое pair trading?",
-    a: "Pair trading — стратегия, при которой открываются две связанные позиции (long по одному инструменту, short по другому). Доходность идёт от сходимости или расхождения спреда между ними, а не от общего движения рынка.",
+    q: "What is pair trading?",
+    a: "Pair trading is a strategy where two correlated positions are opened (long on one instrument, short on another). Profit comes from spread convergence or divergence, not from overall market movement.",
   },
   {
-    q: "Нужен ли реальный счёт OKX?",
-    a: "Можно использовать демо-счёт OKX — бот поддерживает режим демо. Для реальной торговли потребуется реальный счёт и API-ключи с правами на торговлю.",
+    q: "Do I need a real OKX account?",
+    a: "You can use OKX demo — the bot supports demo mode. For live trading you need a real account and API keys with trading permissions.",
   },
   {
-    q: "Почему позиция не закрывается?",
-    a: "Иногда биржа не исполняет рыночный ордер сразу (низкая ликвидность, технические ограничения). Попробуйте закрыть вручную через OKX с типом «Market» и флагом «Reduce Only». Убедитесь, что IP добавлен в whitelist API-ключа.",
+    q: "Why doesn't the position close?",
+    a: "Sometimes the exchange doesn't fill market orders immediately (low liquidity, technical limits). Try closing manually via OKX with 'Market' type and 'Reduce Only' flag. Ensure your IP is in the API key whitelist.",
   },
   {
-    q: "Как настроить тейк-профит и стоп-лосс?",
-    a: "В разделе «Настройки» задайте процент для тейк-профита (при какой прибыли закрывать) и стоп-лосса (при каком убытке). Можно отключить стоп-лосс, если используете только ручное управление.",
+    q: "How do I configure take profit and stop loss?",
+    a: "In Settings, set the percentage for take profit (when to close at profit) and stop loss (when to close at loss). You can disable stop loss if you prefer manual control only.",
   },
   {
-    q: "Бот открыл только часть позиций — почему?",
-    a: "Раньше это могло быть из-за того, что не все котировки успевали прийти до входа. Сейчас бот использует reference prices как fallback, и должен открывать все 10 позиций (5 long + 5 short) при корректном балансе.",
+    q: "Why did the bot open only part of the positions?",
+    a: "Previously this could happen when quotes didn't arrive in time. The bot now uses reference prices as fallback and should open all 10 positions (5 long + 5 short) with a correct balance.",
   },
 ];
 
@@ -34,8 +34,8 @@ export default function FAQPage() {
     <div className="min-h-screen bg-[var(--background)]">
       <LandingHeader />
       <main className="max-w-2xl mx-auto px-6 py-16">
-        <h1 className="text-3xl font-bold mb-2">Частые вопросы</h1>
-        <p className="text-[var(--muted)] mb-12">Ответы на типичные вопросы о платформе</p>
+        <h1 className="text-3xl font-bold mb-2">FAQ</h1>
+        <p className="text-[var(--muted)] mb-12">Answers to common questions about the platform</p>
 
         <div className="space-y-2">
           {faqs.map(({ q, a }, i) => (

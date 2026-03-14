@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { analyticsSummary, analyticsTrades } from "@/lib/api";
+import { parseBackendUtcDate } from "@/lib/date";
 import {
   BarChart,
   Bar,
@@ -33,16 +34,16 @@ type Trade = {
 };
 
 function fmtDate(s: string | null) {
-  if (!s) return "—";
-  return new Date(s).toLocaleString("ru");
+  const d = parseBackendUtcDate(s);
+  return d ? d.toLocaleString("en-US") : "—";
 }
 
 function fmtDuration(sec: number | null | undefined) {
   if (!sec) return "—";
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
-  if (h > 0) return `${h}ч ${m}м`;
-  return `${m}м`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
 export default function AnalyticsPage() {
@@ -76,17 +77,17 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardLayout>
-      <h1 className="text-2xl font-semibold mb-6">Аналитика</h1>
+      <h1 className="text-xl md:text-2xl font-semibold mb-4 md:mb-6">Analytics</h1>
 
       {summary && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8"
+          className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8"
         >
           {[
-            { label: "Сделок", value: summary.trades_count },
-            { label: "Винрейт", value: `${summary.winrate_pct.toFixed(1)}%` },
+            { label: "Trades", value: summary.trades_count },
+            { label: "Win rate", value: `${summary.winrate_pct.toFixed(1)}%` },
             {
               label: "PnL %",
               value: `${summary.pnl_total_pct >= 0 ? "+" : ""}${summary.pnl_total_pct.toFixed(2)}%`,
@@ -97,7 +98,7 @@ export default function AnalyticsPage() {
               value: `${summary.pnl_total_usdt >= 0 ? "+" : ""}$${summary.pnl_total_usdt.toFixed(2)}`,
               positive: summary.pnl_total_usdt >= 0,
             },
-            { label: "Ср. сделка", value: `${summary.avg_trade_pct.toFixed(2)}%` },
+            { label: "Avg trade", value: `${summary.avg_trade_pct.toFixed(2)}%` },
           ].map(({ label, value, positive }) => (
             <div key={label} className="card-glass p-4">
               <p className="text-sm text-[var(--muted)]">{label}</p>
@@ -115,19 +116,19 @@ export default function AnalyticsPage() {
 
       {/* PnL Charts */}
       {cumulativePnl.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="card-glass p-6"
+            className="card-glass p-4 md:p-6 min-w-0 overflow-hidden"
           >
-            <h2 className="text-sm font-medium text-[var(--muted)] mb-4">PnL по сделкам (%)</h2>
-            <div className="h-52">
+            <h2 className="text-sm font-medium text-[var(--muted)] mb-4">PnL by trade (%)</h2>
+            <div className="h-40 sm:h-52 min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={pnlByTrade} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(59,130,246,0.1)" />
-                  <XAxis dataKey="idx" tick={{ fill: "var(--muted)", fontSize: 10 }} label={{ value: "Сделка", position: "insideBottom", offset: -2, fill: "var(--muted)", fontSize: 10 }} />
+                  <XAxis dataKey="idx" tick={{ fill: "var(--muted)", fontSize: 10 }} label={{ value: "Trade", position: "insideBottom", offset: -2, fill: "var(--muted)", fontSize: 10 }} />
                   <YAxis tick={{ fill: "var(--muted)", fontSize: 10 }} />
                   <Tooltip
                     contentStyle={{ background: "var(--card-bg)", border: "1px solid var(--card-border)", borderRadius: 8 }}
@@ -148,10 +149,10 @@ export default function AnalyticsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="card-glass p-6"
+            className="card-glass p-4 md:p-6 min-w-0 overflow-hidden"
           >
-            <h2 className="text-sm font-medium text-[var(--muted)] mb-4">Кумулятивный PnL (%)</h2>
-            <div className="h-52">
+            <h2 className="text-sm font-medium text-[var(--muted)] mb-4">Cumulative PnL (%)</h2>
+            <div className="h-40 sm:h-52 min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={cumulativePnl} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(59,130,246,0.1)" />
@@ -159,7 +160,7 @@ export default function AnalyticsPage() {
                   <YAxis tick={{ fill: "var(--muted)", fontSize: 10 }} />
                   <Tooltip
                     contentStyle={{ background: "var(--card-bg)", border: "1px solid var(--card-border)", borderRadius: 8 }}
-                    formatter={(v: number) => [`${v.toFixed(3)}%`, "Кумулятивный PnL"]}
+                    formatter={(v: number) => [`${v.toFixed(3)}%`, "Cumulative PnL"]}
                   />
                   <ReferenceLine y={0} stroke="var(--muted)" strokeDasharray="3 3" />
                   <Line type="monotone" dataKey="cumulative" stroke="var(--accent)" strokeWidth={2} dot={{ fill: "var(--accent)", r: 2 }} isAnimationActive />
@@ -177,20 +178,20 @@ export default function AnalyticsPage() {
         transition={{ delay: 0.15 }}
         className="card-glass overflow-hidden"
       >
-        <h2 className="text-lg font-medium p-6 pb-0">Сделки</h2>
-        <div className="overflow-x-auto p-6">
-          <table className="w-full text-sm">
+        <h2 className="text-lg font-medium p-4 md:p-6 pb-0">Trades</h2>
+        <div className="overflow-x-auto p-4 md:p-6 -mx-4 md:mx-0 md:px-6">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="text-left text-[var(--muted)] border-b border-[var(--card-border)]">
                 <th className="pb-3 pr-4">ID</th>
-                <th className="pb-3 pr-4">Открыта</th>
-                <th className="pb-3 pr-4">Закрыта</th>
-                <th className="pb-3 pr-4">Длит.</th>
-                <th className="pb-3 pr-4">Вход %</th>
-                <th className="pb-3 pr-4">Выход %</th>
+                <th className="pb-3 pr-4">Opened</th>
+                <th className="pb-3 pr-4">Closed</th>
+                <th className="pb-3 pr-4">Dur.</th>
+                <th className="pb-3 pr-4">Entry %</th>
+                <th className="pb-3 pr-4">Exit %</th>
                 <th className="pb-3 pr-4">PnL %</th>
                 <th className="pb-3 pr-4">PnL USDT</th>
-                <th className="pb-3">Причина</th>
+                <th className="pb-3">Reason</th>
               </tr>
             </thead>
             <tbody>
@@ -214,7 +215,7 @@ export default function AnalyticsPage() {
             </tbody>
           </table>
           {trades.length === 0 && (
-            <p className="text-center text-[var(--muted)] py-12">Нет сделок</p>
+            <p className="text-center text-[var(--muted)] py-12">No trades</p>
           )}
         </div>
       </motion.div>
