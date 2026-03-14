@@ -9,7 +9,7 @@ import { BottomNav } from "./BottomNav";
 import { MobileDrawer } from "./MobileDrawer";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, switchingAccount } = useAuth();
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -28,7 +28,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex bg-[var(--background)]">
+    <div className="min-h-screen flex bg-[var(--background)] relative">
+      {switchingAccount && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--background)]/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-10 h-10 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-[var(--muted)]">Switching account...</p>
+          </div>
+        </div>
+      )}
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         <Header onOpenDrawer={() => setDrawerOpen(true)} />

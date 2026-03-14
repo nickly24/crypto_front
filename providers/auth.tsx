@@ -41,6 +41,7 @@ function setCurrentEmail(email: string | null) {
 const AuthContext = createContext<{
   user: User;
   loading: boolean;
+  switchingAccount: boolean;
   accounts: StoredAccount[];
   login: (email: string, password: string, addAccount?: boolean) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
@@ -49,6 +50,7 @@ const AuthContext = createContext<{
 }>({
   user: null,
   loading: true,
+  switchingAccount: false,
   accounts: [],
   login: async () => ({ ok: false }),
   logout: () => {},
@@ -56,9 +58,12 @@ const AuthContext = createContext<{
   logoutAccount: () => {},
 });
 
+const SWITCHING_DURATION_MS = 2500;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
+  const [switchingAccount, setSwitchingAccount] = useState(false);
   const [accounts, setAccounts] = useState<StoredAccount[]>([]);
 
   const applyAccount = useCallback((acc: StoredAccount | null) => {
@@ -82,8 +87,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (current) {
       me().then((r) => {
         if (r.ok && r.data) {
-          applyAccount({ ...current, user: r.data });
-          const updated = accs.map((a) => (a.email === current.email ? { ...a, user: r.data } : a));
+          const userData: User = r.data;
+          applyAccount({ ...current, user: userData });
+          const updated = accs.map((a) => (a.email === current.email ? { ...a, user: userData } : a));
           saveAccounts(updated);
           setAccounts(updated);
         } else {
@@ -100,7 +106,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (token) {
       me().then((r) => {
         if (r.ok && r.data) {
-          const acc: StoredAccount = { email: r.data.email, token, user: r.data };
+          const userData: User = r.data;
+          const acc: StoredAccount = { email: userData.email, token, user: userData };
           const exists = accs.some((a) => a.email === acc.email);
           const next = exists ? accs.map((a) => (a.email === acc.email ? acc : a)) : [...accs, acc];
           saveAccounts(next);
@@ -142,7 +149,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const switchAccount = (account: StoredAccount) => {
+    setSwitchingAccount(true);
     applyAccount(account);
+    setTimeout(() => setSwitchingAccount(false), SWITCHING_DURATION_MS);
   };
 
   const logoutAccount = (account: StoredAccount) => {
@@ -154,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, accounts, login, logout, switchAccount, logoutAccount }}>
+    <AuthContext.Provider value={{ user, loading, switchingAccount, accounts, login, logout, switchAccount, logoutAccount }}>
       {children}
     </AuthContext.Provider>
   );
