@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { InstrumentChart } from "./InstrumentChart";
+import { CryptoIcon } from "./CryptoIcon";
 import { getChartInstruments } from "@/lib/api";
 import { BarChart3, TrendingUp } from "lucide-react";
 
@@ -51,7 +52,8 @@ export function InstrumentsChartsView({ configBaskets = [] }: InstrumentsChartsV
           const is1 = selected1 === inst;
           const is2 = selected2 === inst;
           return (
-            <div key={inst} className="flex items-center gap-1">
+            <div key={inst} className="flex items-center gap-2">
+              <CryptoIcon symbol={inst} size={18} />
               <span className="flex-1 text-sm text-[var(--foreground)] truncate">{short}</span>
               <button
                 onClick={() => setSelected1(inst)}
@@ -103,13 +105,19 @@ export function InstrumentsChartsView({ configBaskets = [] }: InstrumentsChartsV
         </div>
         <div className="flex-1 flex flex-col gap-2 min-h-0 overflow-hidden">
           <div className="flex-1 min-h-0 flex flex-col">
-            <p className="text-xs text-[var(--muted)] shrink-0">{selected1 ? selected1.replace("-USDT-SWAP", "") : "Slot 1"}</p>
+            <p className="flex items-center gap-2 text-xs text-[var(--muted)] shrink-0">
+              {selected1 && <CryptoIcon symbol={selected1} size={16} />}
+              {selected1 ? selected1.replace("-USDT-SWAP", "") : "Slot 1"}
+            </p>
             <div className="flex-1 min-h-[180px]">
               <InstrumentChart instId={selected1} bar={bar} chartType={chartType} />
             </div>
           </div>
           <div className="flex-1 min-h-0 flex flex-col">
-            <p className="text-xs text-[var(--muted)] shrink-0">{selected2 ? selected2.replace("-USDT-SWAP", "") : "Slot 2"}</p>
+            <p className="flex items-center gap-2 text-xs text-[var(--muted)] shrink-0">
+              {selected2 && <CryptoIcon symbol={selected2} size={16} />}
+              {selected2 ? selected2.replace("-USDT-SWAP", "") : "Slot 2"}
+            </p>
             <div className="flex-1 min-h-[180px]">
               <InstrumentChart instId={selected2} bar={bar} chartType={chartType} />
             </div>

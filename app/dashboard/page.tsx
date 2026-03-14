@@ -47,6 +47,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { CryptoIcon } from "@/components/CryptoIcon";
 
 type BotStatusData = {
   alive?: boolean;
@@ -384,9 +385,12 @@ export default function DashboardPage() {
         {/* Overview */}
         <motion.div {...anim(0)} className="card-glass p-4 md:p-6 lg:col-span-1">
           <h2 className="text-sm font-medium text-[var(--muted)] mb-4">Balance</h2>
-          <p className="text-3xl font-semibold">
-            ${balance.toFixed(2)}
-          </p>
+          <div className="flex items-center gap-2">
+            <CryptoIcon symbol="USDT" size={28} />
+            <p className="text-3xl font-semibold">
+              ${balance.toFixed(2)}
+            </p>
+          </div>
           <p className="text-xs text-[var(--muted)] mt-1">
             Available: ${available.toFixed(2)}
           </p>
@@ -762,7 +766,10 @@ export default function DashboardPage() {
                       <p className="text-xs font-medium text-[var(--positive)] mb-1">LONG</p>
                       {positionsBreakdown.longItems.map((item) => (
                         <div key={item.instId} className="flex items-center justify-between py-1 px-2 rounded bg-[var(--positive)]/5 text-sm">
-                          <span>{item.shortName}</span>
+                          <span className="flex items-center gap-2">
+                            <CryptoIcon symbol={item.instId} size={18} />
+                            {item.shortName}
+                          </span>
                           <span className={`font-medium ${item.upl >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
                             {item.upl >= 0 ? "+" : ""}${item.upl.toFixed(2)}
                           </span>
@@ -773,7 +780,10 @@ export default function DashboardPage() {
                       <p className="text-xs font-medium text-[var(--negative)] mb-1">SHORT</p>
                       {positionsBreakdown.shortItems.map((item) => (
                         <div key={item.instId} className="flex items-center justify-between py-1 px-2 rounded bg-[var(--negative)]/5 text-sm">
-                          <span>{item.shortName}</span>
+                          <span className="flex items-center gap-2">
+                            <CryptoIcon symbol={item.instId} size={18} />
+                            {item.shortName}
+                          </span>
                           <span className={`font-medium ${item.upl >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
                             {item.upl >= 0 ? "+" : ""}${item.upl.toFixed(2)}
                           </span>
@@ -822,7 +832,10 @@ export default function DashboardPage() {
             <div className="space-y-1.5 max-h-64 overflow-y-auto">
               {quotesArr.map((q) => (
                 <div key={q.symbol} className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--background)]/50 hover:bg-[var(--background)]/80 transition">
-                  <span className="text-sm font-medium">{q.symbol.replace("-USDT-SWAP", "")}</span>
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    <CryptoIcon symbol={q.symbol} size={20} />
+                    {q.symbol.replace("-USDT-SWAP", "")}
+                  </span>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-mono">${q.price.toFixed(q.price < 1 ? 5 : 2)}</span>
                     {q.change != null && (
@@ -906,9 +919,15 @@ export default function DashboardPage() {
               {config.baskets.map((b, i) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-[var(--background)]/50">
                   <span className="text-xs text-[var(--muted)] w-8">#{i + 1}</span>
-                  <span className="font-medium text-[var(--positive)]">{b.basket1}</span>
+                  <span className="flex items-center gap-2 font-medium text-[var(--positive)]">
+                    <CryptoIcon symbol={b.basket1} size={20} />
+                    {b.basket1}
+                  </span>
                   <span className="text-[var(--muted)]">vs</span>
-                  <span className="font-medium text-[var(--negative)]">{b.basket2}</span>
+                  <span className="flex items-center gap-2 font-medium text-[var(--negative)]">
+                    <CryptoIcon symbol={b.basket2} size={20} />
+                    {b.basket2}
+                  </span>
                 </div>
               ))}
             </div>

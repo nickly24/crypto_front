@@ -23,6 +23,7 @@ import {
   X,
   Pencil,
 } from "lucide-react";
+import { CryptoIcon } from "@/components/CryptoIcon";
 
 type BotConfigData = {
   baskets: Array<{ basket1: string; basket2: string }>;
@@ -403,9 +404,15 @@ export default function SettingsPage() {
                     </>
                   ) : (
                     <>
-                      <span className="font-medium text-[var(--positive)]">{b.basket1}</span>
+                      <span className="flex items-center gap-2 font-medium text-[var(--positive)]">
+                        <CryptoIcon symbol={b.basket1} size={20} />
+                        {b.basket1}
+                      </span>
                       <span className="text-[var(--muted)]">vs</span>
-                      <span className="font-medium text-[var(--negative)]">{b.basket2}</span>
+                      <span className="flex items-center gap-2 font-medium text-[var(--negative)]">
+                        <CryptoIcon symbol={b.basket2} size={20} />
+                        {b.basket2}
+                      </span>
                     </>
                   )}
                 </div>
