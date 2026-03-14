@@ -80,12 +80,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const accs = loadAccounts();
     setAccounts(accs);
     const currentEmail = getCurrentEmail();
     const current = accs.find((a) => a.email === currentEmail) ?? accs[0];
     if (current) {
+      localStorage.setItem("access_token", current.token);
       me().then((r) => {
+        if (cancelled) return;
         if (r.ok && r.data) {
           const userData: User = r.data;
           applyAccount({ ...current, user: userData });
@@ -100,11 +103,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         setLoading(false);
       });
-      return;
+      return () => { cancelled = true; };
     }
     const token = localStorage.getItem("access_token");
     if (token) {
       me().then((r) => {
+        if (cancelled) return;
         if (r.ok && r.data) {
           const userData: User = r.data;
           const acc: StoredAccount = { email: userData.email, token, user: userData };
@@ -119,6 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         setLoading(false);
       });
+      return () => { cancelled = true; };
     } else setLoading(false);
   }, [applyAccount]);
 
