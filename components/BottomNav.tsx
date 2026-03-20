@@ -8,6 +8,7 @@ import {
   BarChart3,
   Bookmark,
   LineChart,
+  Code2,
 } from "lucide-react";
 
 const nav = [

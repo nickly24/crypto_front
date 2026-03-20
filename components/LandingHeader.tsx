@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/providers/auth";
-import { useTheme } from "@/providers/theme";
 import { HelpCircle, LogIn, LayoutDashboard, Settings, BarChart3, Palette } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
@@ -24,7 +23,6 @@ const appNav = [
 export function LandingHeader() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { openAppearancePicker } = useTheme();
 
   return (
     <header className="h-16 flex items-center justify-between px-6 lg:px-10 border-b border-white/5 bg-[var(--card-bg)]/60 backdrop-blur-xl sticky top-0 z-50">
@@ -55,13 +53,13 @@ export function LandingHeader() {
         </nav>
       </div>
       <div className="flex items-center gap-3">
-        <button
-          onClick={openAppearancePicker}
+        <Link
+          href="/settings?section=appearance"
           className="p-2 rounded-lg text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-hover)] transition"
-          title="Theme & appearance"
+          title="Theme — Settings"
         >
           <Palette className="w-5 h-5" />
-        </button>
+        </Link>
         <Link
           href="/guide"
           className="p-2 rounded-lg text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-hover)] transition"

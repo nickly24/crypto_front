@@ -46,6 +46,8 @@ export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: numbe
       color: positiveColor,
       lineWidth: 2,
       priceFormat: { type: "percent", precision: 4, minMove: 0.0001 },
+      priceLineVisible: false,
+      lastValueVisible: false,
     });
     chartRef.current = chart;
     seriesRef.current = lineSeries;

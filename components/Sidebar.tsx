@@ -9,6 +9,7 @@ import {
   HelpCircle,
   Bookmark,
   LineChart,
+  Code2,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 

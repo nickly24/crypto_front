@@ -18,10 +18,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "PairTrading Panel",
   description: "PairTrading dashboard",
-  viewport: { width: "device-width", initialScale: 1, maximumScale: 5 },
   icons: {
     icon: "/logo.ico",
   },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({

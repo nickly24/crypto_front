@@ -1,17 +1,21 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams, useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import Link from "next/link";
 import {
   botStatus,
   analyticsSummary,
-  analyticsTrades,
+  analyticsTradesDetailed,
   botStart,
   botStop,
   botClosePosition,
   getBotConfig,
+  syncSubscriptionAfterPayment,
+  botPositionsLive,
+  LivePosition,
 } from "@/lib/api";
 import { parseBackendUtcDate } from "@/lib/date";
 import {
@@ -37,6 +41,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Clock,
+  HelpCircle,
   Layers,
   Maximize2,
   Play,
@@ -48,7 +53,11 @@ import {
   Zap,
 } from "lucide-react";
 import { CryptoIcon } from "@/components/CryptoIcon";
+import { TradeDetailExpandable } from "@/components/TradeDetailExpandable";
+import { GuideTour } from "@/components/GuideTour";
+import { DASHBOARD_TOUR_STEPS } from "@/lib/tour-steps";
 import { useFiatRates } from "@/lib/useFiatRates";
+import { useAuth } from "@/providers/auth";
 import { useTheme } from "@/providers/theme";
 
 type BotStatusData = {
@@ -88,6 +97,8 @@ type BotConfig = {
   modes: Record<string, boolean>;
 };
 
+type PairPosition = { qty: number; upl: number; avg_price: number; side?: string };
+
 type Trade = {
   id: number;
   opened_at: string | null;
@@ -97,9 +108,11 @@ type Trade = {
   exit_spread_pct: number;
   pnl_pct: number;
   pnl_usdt: number;
+  total_volume_usdt?: number;
   long_basket: string | null;
   short_basket: string | null;
   reason: string | null;
+  pairs_detail?: Record<string, PairPosition>;
 };
 
 const POLL_INTERVAL_MS = 2500;
@@ -122,7 +135,13 @@ function fmtDuration(sec: number | null | undefined) {
   return `${m}m`;
 }
 
-export default function DashboardPage() {
+function DashboardPageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { refreshUser } = useAuth();
+  const [tourOpen, setTourOpen] = useState(false);
+  const paymentSuccessTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [status, setStatus] = useState<BotStatusData | null>(null);
   const [config, setConfig] = useState<BotConfig | null>(null);
   const [configLoaded, setConfigLoaded] = useState(false);
@@ -135,10 +154,12 @@ export default function DashboardPage() {
     avg_trade_pct: number;
   } | null>(null);
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [expandedTradeId, setExpandedTradeId] = useState<number | null>(null);
   const [botActionLoading, setBotActionLoading] = useState(false);
   const [botActionLabel, setBotActionLabel] = useState<string | null>(null);
   const [spreadHistory, setSpreadHistory] = useState<Array<{ t: string; v: number }>>([]);
   const [pnlHistory, setPnlHistory] = useState<Array<{ t: string; v: number }>>([]);
+  const [livePositions, setLivePositions] = useState<LivePosition[] | null>(null);
   const pollVersionRef = useRef(0);
   const fiatRates = useFiatRates();
   const { positiveColor, negativeColor, accentColor } = useTheme();
@@ -190,12 +211,22 @@ export default function DashboardPage() {
     });
   }
 
+  function fetchLivePositions() {
+    botPositionsLive().then((r) => {
+      if (r.ok && r.data) {
+        setLivePositions(r.data.positions || []);
+      } else {
+        setLivePositions(null);
+      }
+    });
+  }
+
   function fetchSummary() {
     analyticsSummary().then((r) => r.ok && r.data && setSummary(r.data));
   }
 
   function fetchTrades() {
-    analyticsTrades(10).then((r) => r.ok && r.data?.trades && setTrades(r.data.trades));
+    analyticsTradesDetailed(10).then((r) => r.ok && r.data?.trades && setTrades(r.data.trades));
   }
 
   useEffect(() => {
@@ -203,9 +234,35 @@ export default function DashboardPage() {
     fetchSummary();
     fetchConfig();
     fetchTrades();
-    const id = setInterval(fetchStatus, POLL_INTERVAL_MS);
+    fetchLivePositions();
+    const id = setInterval(() => {
+      fetchStatus();
+      fetchLivePositions();
+    }, POLL_INTERVAL_MS);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("payment") !== "success") return;
+    (async () => {
+      try {
+        await syncSubscriptionAfterPayment();
+      } catch (_) {
+        // ignore network errors; user may still have paid and webhook will apply
+      }
+      await refreshUser();
+      setPaymentSuccess(true);
+      router.replace("/dashboard", { scroll: false });
+      if (paymentSuccessTimeoutRef.current) clearTimeout(paymentSuccessTimeoutRef.current);
+      paymentSuccessTimeoutRef.current = setTimeout(() => setPaymentSuccess(false), 4000);
+    })();
+    return () => {
+      if (paymentSuccessTimeoutRef.current) {
+        clearTimeout(paymentSuccessTimeoutRef.current);
+        paymentSuccessTimeoutRef.current = null;
+      }
+    };
+  }, [searchParams, refreshUser, router]);
 
   async function handleStart() {
     setBotActionLoading(true);
@@ -312,6 +369,14 @@ export default function DashboardPage() {
     }).sort((a, b) => a.symbol.localeCompare(b.symbol));
   }, [quotes, refPrices]);
 
+  const quotesByInstId = useMemo(() => {
+    const map: Record<string, { price: number; change: number | null }> = {};
+    for (const q of quotesArr) {
+      map[q.symbol] = { price: q.price, change: q.change };
+    }
+    return map;
+  }, [quotesArr]);
+
   const positionsBreakdown = useMemo(() => {
     if (!positionOpen || !config?.baskets?.length || !ds?.positions_data) return null;
     let positions: Record<string, { side?: string; qty?: number; avg_price?: number; upl?: number; fee?: number; fundingFee?: number }> = {};
@@ -382,12 +447,37 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
-      <h1 className="text-xl md:text-2xl font-semibold mb-4 md:mb-6">Dashboard</h1>
+      <div className="flex items-center justify-between gap-4 mb-4 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-semibold">Dashboard</h1>
+        <button
+          onClick={() => setTourOpen(true)}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20 transition"
+          title="Start guide"
+        >
+          <HelpCircle className="w-5 h-5" />
+          <span className="text-sm font-medium hidden sm:inline">Guide</span>
+        </button>
+      </div>
+
+      <GuideTour steps={DASHBOARD_TOUR_STEPS} open={tourOpen} onClose={() => setTourOpen(false)} />
+
+      <AnimatePresence>
+        {paymentSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-[var(--positive)]/20 border border-[var(--positive)]/40 text-[var(--positive)] text-sm font-medium"
+          >
+            Payment successful. Subscription extended.
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Row 1: Overview, Spread & PnL (expanded) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Overview */}
-        <motion.div {...anim(0)} className="card-glass p-4 md:p-6 lg:col-span-1">
+        <motion.div {...anim(0)} data-tour="tour-balance" className="card-glass p-4 md:p-6 lg:col-span-1">
           <h2 className="text-sm font-medium text-[var(--muted)] mb-4">Balance</h2>
           <div className="flex items-center gap-2">
             <CryptoIcon symbol="USDT" size={28} />
@@ -453,7 +543,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Spread & Chart */}
-        <motion.div {...anim(0.05)} className="card-glass p-4 md:p-6 lg:col-span-2 min-w-0 overflow-hidden">
+        <motion.div {...anim(0.05)} data-tour="tour-spread" className="card-glass p-4 md:p-6 lg:col-span-2 min-w-0 overflow-hidden">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-medium text-[var(--muted)]">Spread (live)</h2>
             <div className="flex gap-1">
@@ -692,7 +782,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Bot status */}
-      <motion.div {...anim(0.08)} className="card-glass p-3 md:p-4 mt-4 md:mt-6 flex flex-wrap items-center gap-3 md:gap-4">
+      <motion.div {...anim(0.08)} data-tour="tour-bot-status" className="card-glass p-3 md:p-4 mt-4 md:mt-6 flex flex-wrap items-center gap-3 md:gap-4">
         <div className="flex items-center gap-2">
           <span className={`w-2.5 h-2.5 rounded-full ${status?.alive ? "bg-[var(--positive)] animate-pulse" : "bg-[var(--negative)]"}`} />
           <span className="font-medium">{status?.alive ? "Bot active" : "Bot stopped"}</span>
@@ -729,7 +819,7 @@ export default function DashboardPage() {
       {/* Row 2: Current Position + Quotes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
         {/* Current Position */}
-        <motion.div {...anim(0.15)} className="card-glass p-4 md:p-6">
+        <motion.div {...anim(0.15)} data-tour="tour-position" className="card-glass p-4 md:p-6">
           <h2 className="text-sm font-medium text-[var(--muted)] mb-4 flex items-center gap-2">
             <Zap className="w-4 h-4" />
             Current position
@@ -834,6 +924,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
+              {/* live positions UI перенесли в правый столбец, чтобы не загромождать текущую позицию */}
               <button
                 onClick={handleClosePosition}
                 disabled={botActionLoading}
@@ -851,30 +942,103 @@ export default function DashboardPage() {
           )}
         </motion.div>
 
-        {/* Quotes Table */}
-        <motion.div {...anim(0.2)} className="card-glass p-4 md:p-6 min-w-0 overflow-hidden">
-          <h2 className="text-sm font-medium text-[var(--muted)] mb-4">Instrument quotes</h2>
-          {quotesArr.length > 0 ? (
-            <div className="space-y-1.5 overflow-x-hidden">
-              {quotesArr.map((q) => (
-                <div key={q.symbol} className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-[var(--background)]/50 hover:bg-[var(--background)]/80 transition min-w-0">
-                  <span className="flex items-center gap-2 text-sm font-medium min-w-0 shrink">
-                    <CryptoIcon symbol={q.symbol} size={20} />
-                    <span className="truncate">{q.symbol.replace("-USDT-SWAP", "")}</span>
-                  </span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-sm font-mono whitespace-nowrap">${q.price.toFixed(q.price < 1 ? 5 : 2)}</span>
-                    {q.change != null && (
-                      <span className={`text-xs font-medium w-14 text-right ${q.change >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                        {q.change >= 0 ? "+" : ""}{q.change.toFixed(2)}%
+        {/* Instruments & Live positions (combined) */}
+        <motion.div {...anim(0.2)} className="card-glass p-4 md:p-6 min-w-0 overflow-hidden flex flex-col gap-3">
+          <h2 className="text-sm font-medium text-[var(--muted)] mb-1">Instruments & live positions</h2>
+          {livePositions && livePositions.length > 0 ? (
+            <div className="space-y-2 overflow-x-hidden">
+              {[...livePositions]
+                .sort((a, b) => (a.side === "long" ? 0 : 1) - (b.side === "long" ? 0 : 1))
+                .map((p) => {
+                const shortName = p.instId.replace("-USDT-SWAP", "");
+                const q = quotesByInstId[p.instId];
+                const price = q?.price ?? p.markPx;
+                const change = q?.change ?? null;
+                const hasLiq = p.liqPx > 0 && p.markPx > 0 && p.avgPx > 0;
+                const isLong = p.side === "long";
+                let ratio: number | null = null;
+                if (hasLiq) {
+                  // Для LONG: шкала от liq -> entry, для SHORT: от entry -> liq.
+                  if (isLong) {
+                    const liq = p.liqPx;
+                    const entry = p.avgPx;
+                    const current = p.markPx;
+                    const span = entry - liq;
+                    if (span > 0) {
+                      const clamped = Math.max(liq, Math.min(current, entry));
+                      ratio = (clamped - liq) / span;
+                    }
+                  } else {
+                    const liq = p.liqPx;
+                    const entry = p.avgPx;
+                    const current = p.markPx;
+                    const span = liq - entry;
+                    if (span > 0) {
+                      const clamped = Math.min(liq, Math.max(current, entry));
+                      ratio = (liq - clamped) / span;
+                    }
+                  }
+                  if (!isFinite(ratio!)) ratio = null;
+                  if (ratio != null) {
+                    ratio = Math.max(0, Math.min(1, ratio));
+                  }
+                }
+                const safeColor = isLong ? positiveColor : negativeColor;
+                const dangerColor = isLong ? negativeColor : positiveColor;
+                const barColor =
+                  ratio == null
+                    ? accentColor
+                    : ratio > 0.6
+                    ? safeColor
+                    : ratio > 0.3
+                    ? accentColor
+                    : dangerColor;
+                return (
+                  <div key={p.instId} className="flex flex-col gap-1.5 p-2.5 rounded-lg bg-[var(--background)]/60">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <CryptoIcon symbol={p.instId} size={18} />
+                        <span className="truncate text-sm font-medium">{shortName}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${isLong ? "border-[var(--positive)] text-[var(--positive)]" : "border-[var(--negative)] text-[var(--negative)]"}`}>
+                          {p.side.toUpperCase()}
+                        </span>
                       </span>
+                      <span className="flex items-center gap-2 shrink-0">
+                        <span className="text-sm font-mono whitespace-nowrap">
+                          ${price.toFixed(price < 1 ? 5 : 2)}
+                        </span>
+                        {change != null && (
+                          <span className={`text-[11px] font-medium w-14 text-right ${change >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                            {change >= 0 ? "+" : ""}{change.toFixed(2)}%
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] text-[var(--muted)]">
+                      <span>
+                        Entry: {p.avgPx?.toFixed(p.avgPx < 1 ? 5 : 3)}
+                      </span>
+                      <span>
+                        Liq: {hasLiq ? p.liqPx.toFixed(p.liqPx < 1 ? 5 : 3) : "—"}
+                      </span>
+                    </div>
+                    {ratio != null && (
+                      <div className="h-2 rounded-full bg-[var(--card-border)]/60 overflow-hidden">
+                        <div
+                          className="h-full"
+                          style={{
+                            width: `${Math.round(ratio * 100)}%`,
+                            backgroundColor: barColor,
+                          }}
+                        />
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
-            <p className="text-sm text-[var(--muted)] text-center py-8">No data</p>
+            <p className="text-sm text-[var(--muted)] text-center py-8">No live positions</p>
           )}
         </motion.div>
       </div>
@@ -1004,16 +1168,18 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 5: Recent Trades */}
-      <motion.div {...anim(0.4)} className="card-glass p-4 md:p-6 mt-4 md:mt-6 overflow-hidden">
+      <motion.div {...anim(0.4)} data-tour="tour-trades" className="card-glass p-4 md:p-6 mt-4 md:mt-6 overflow-hidden">
         <h2 className="text-sm font-medium text-[var(--muted)] mb-4 flex items-center gap-2">
           <Clock className="w-4 h-4" />
           Recent trades
         </h2>
+        <p className="text-xs text-[var(--muted)] -mt-2 mb-2">Click a row to expand positions</p>
         {trades.length > 0 ? (
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
             <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="text-left text-[var(--muted)] border-b border-[var(--card-border)]">
+                  <th className="pb-3 pr-2 w-6"></th>
                   <th className="pb-3 pr-4">Opened</th>
                   <th className="pb-3 pr-4">Closed</th>
                   <th className="pb-3 pr-4">Dur.</th>
@@ -1025,22 +1191,51 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {trades.map((t) => (
-                  <tr key={t.id} className="border-b border-[var(--card-border)]/50 hover:bg-[var(--card-border)]/20 transition">
-                    <td className="py-3 pr-4 text-xs">{fmtDate(t.opened_at)}</td>
-                    <td className="py-3 pr-4 text-xs">{fmtDate(t.closed_at)}</td>
-                    <td className="py-3 pr-4 text-xs">{fmtDuration(t.duration_sec)}</td>
-                    <td className="py-3 pr-4">{Number(t.entry_spread_pct).toFixed(3)}</td>
-                    <td className="py-3 pr-4">{Number(t.exit_spread_pct).toFixed(3)}</td>
-                    <td className={`py-3 pr-4 font-medium ${Number(t.pnl_pct) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                      {Number(t.pnl_pct) >= 0 ? "+" : ""}{Number(t.pnl_pct).toFixed(2)}%
-                    </td>
-                    <td className={`py-3 pr-4 ${Number(t.pnl_usdt) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                      ${Number(t.pnl_usdt).toFixed(2)}
-                    </td>
-                    <td className="py-3 text-xs text-[var(--muted)]">{t.reason || "—"}</td>
-                  </tr>
-                ))}
+                {trades.map((t) => {
+                  const hasDetail = t.pairs_detail && Object.keys(t.pairs_detail).length > 0;
+                  const isExpanded = expandedTradeId === t.id;
+                  return (
+                    <React.Fragment key={t.id}>
+                      <tr
+                        onClick={() => hasDetail && setExpandedTradeId(isExpanded ? null : t.id)}
+                        className={`border-b border-[var(--card-border)]/50 transition ${hasDetail ? "cursor-pointer hover:bg-[var(--card-border)]/20" : ""}`}
+                      >
+                        <td className="py-3 pr-2">
+                          {hasDetail ? (
+                            <span className="text-[var(--muted)] text-xs">{isExpanded ? "▼" : "▶"}</span>
+                          ) : (
+                            <span className="opacity-0">·</span>
+                          )}
+                        </td>
+                        <td className="py-3 pr-4 text-xs">{fmtDate(t.opened_at)}</td>
+                        <td className="py-3 pr-4 text-xs">{fmtDate(t.closed_at)}</td>
+                        <td className="py-3 pr-4 text-xs">{fmtDuration(t.duration_sec)}</td>
+                        <td className="py-3 pr-4">{Number(t.entry_spread_pct).toFixed(3)}</td>
+                        <td className="py-3 pr-4">{Number(t.exit_spread_pct).toFixed(3)}</td>
+                        <td className={`py-3 pr-4 font-medium ${Number(t.pnl_pct) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                          {Number(t.pnl_pct) >= 0 ? "+" : ""}{Number(t.pnl_pct).toFixed(2)}%
+                        </td>
+                        <td className={`py-3 pr-4 ${Number(t.pnl_usdt) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                          ${Number(t.pnl_usdt).toFixed(2)}
+                        </td>
+                        <td className="py-3 text-xs text-[var(--muted)]">{t.reason || "—"}</td>
+                      </tr>
+                      <AnimatePresence>
+                        {isExpanded && hasDetail && t.pairs_detail && (
+                          <tr key={`${t.id}-detail`} className="border-none">
+                            <td colSpan={9} className="p-0 bg-[var(--card-border)]/10 align-top">
+                              <TradeDetailExpandable
+                                pairsDetail={t.pairs_detail}
+                                longBasket={t.long_basket}
+                                shortBasket={t.short_basket}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                      </AnimatePresence>
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -1049,5 +1244,13 @@ export default function DashboardPage() {
         )}
       </motion.div>
     </DashboardLayout>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <DashboardPageInner />
+    </React.Suspense>
   );
 }

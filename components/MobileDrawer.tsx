@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, LayoutDashboard, Settings, BarChart3, HelpCircle, Bookmark, LogOut, Palette, LineChart } from "lucide-react";
+import { X, LayoutDashboard, Settings, BarChart3, HelpCircle, Bookmark, LogOut, LineChart } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { HeaderTickers } from "@/components/HeaderTickers";
 import { useAuth } from "@/providers/auth";
-import { useTheme } from "@/providers/theme";
-
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -26,7 +24,6 @@ const nav = [
 export function MobileDrawer({ open, onClose }: Props) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { openAppearancePicker } = useTheme();
 
   return (
     <AnimatePresence>
@@ -68,13 +65,6 @@ export function MobileDrawer({ open, onClose }: Props) {
             </div>
             </div>
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-              <button
-                onClick={() => { openAppearancePicker(); onClose(); }}
-                className="flex items-center gap-4 w-full px-4 py-3 rounded-xl text-[var(--muted)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--foreground)]"
-              >
-                <Palette className="w-6 h-6 shrink-0" />
-                Theme & appearance
-              </button>
               {nav.map(({ href, label, icon: Icon }) => {
                 const active = pathname === href;
                 return (

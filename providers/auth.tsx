@@ -2,8 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { login as apiLogin, me } from "@/lib/api";
+import type { SubscriptionData } from "@/lib/api";
 
-type User = { id: number; email: string; role: string } | null;
+export type User = ({ id: number; email: string; role: string } & Partial<SubscriptionData>) | null;
 
 export type StoredAccount = { email: string; token: string; user: User };
 
@@ -47,6 +48,7 @@ const AuthContext = createContext<{
   logout: () => void;
   switchAccount: (account: StoredAccount) => void;
   logoutAccount: (account: StoredAccount) => void;
+  refreshUser: () => Promise<void>;
 }>({
   user: null,
   loading: true,
@@ -56,6 +58,7 @@ const AuthContext = createContext<{
   logout: () => {},
   switchAccount: () => {},
   logoutAccount: () => {},
+  refreshUser: async () => {},
 });
 
 const SWITCHING_DURATION_MS = 2500;
@@ -167,8 +170,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (cur === account.email) applyAccount(accs[0] ?? null);
   };
 
+  const refreshUser = useCallback(async () => {
+    const r = await me();
+    if (!r.ok || !r.data) return;
+    const accs = loadAccounts();
+    const curEmail = getCurrentEmail();
+    const current = accs.find((a) => a.email === curEmail);
+    if (!current) return;
+    const updated = { ...current, user: r.data as User };
+    const next = accs.map((a) => (a.email === curEmail ? updated : a));
+    saveAccounts(next);
+    setAccounts(next);
+    applyAccount(updated);
+  }, [applyAccount]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, switchingAccount, accounts, login, logout, switchAccount, logoutAccount }}>
+    <AuthContext.Provider value={{ user, loading, switchingAccount, accounts, login, logout, switchAccount, logoutAccount, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

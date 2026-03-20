@@ -3,17 +3,23 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/providers/auth";
-import { useTheme } from "@/providers/theme";
 import { HeaderTickers } from "@/components/HeaderTickers";
+import {
+  planDescription,
+  daysLeft,
+  isExpired,
+  showBellBadge,
+} from "@/lib/subscription";
+import type { Plan } from "@/lib/subscription";
 import {
   Bell,
   LogOut,
   Menu,
-  Palette,
   Zap,
   UserPlus,
   ChevronRight,
   Check,
+  AlertTriangle,
 } from "lucide-react";
 
 function formatHeaderDate() {
@@ -24,9 +30,13 @@ function formatHeaderDate() {
   });
 }
 
-function TariffBadge() {
+function BellButton() {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const plan = (user?.plan || "FREE") as Plan;
+  const endsAt = user?.subscription_ends_at ?? null;
+  const showDot = showBellBadge(endsAt, plan);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -36,31 +46,116 @@ function TariffBadge() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
+  const expired = isExpired(endsAt);
+  const days = daysLeft(endsAt);
+  const daysWord = (d: number) => (d === 1 ? "day" : "days");
+  const message = expired
+    ? "Your subscription has ended. Renew for full access."
+    : days !== null && days < 5
+      ? `Subscription expires in ${days} ${daysWord(days)}. Renew now!`
+      : null;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="relative p-2.5 md:p-2 rounded-xl text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-hover)] transition"
+        title="Notifications"
+      >
+        <Bell className="w-5 h-5" />
+        {showDot && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--negative)]" />}
+      </button>
+      {open && message && (
+        <div className="absolute right-0 top-full mt-1.5 z-50 w-72 p-4 rounded-xl bg-[var(--card-bg)] border border-[var(--card-border)] shadow-xl">
+          <p className="text-sm text-[var(--foreground)]">{message}</p>
+          <button
+            onClick={() => setOpen(false)}
+            className="mt-3 text-sm font-medium text-[var(--accent)] hover:underline"
+          >
+            Got it
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TariffBadge({ onOpenSubscription }: { onOpenSubscription?: () => void }) {
+  const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const plan = (user?.plan || "FREE") as Plan;
+  const endsAt = user?.subscription_ends_at ?? null;
+  const expired = isExpired(endsAt);
+  const days = daysLeft(endsAt);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const planColors =
+    plan === "PRO+"
+      ? "from-violet-600 via-fuchsia-500 to-amber-500 hover:from-violet-500 hover:via-fuchsia-400 hover:to-amber-400"
+      : plan === "PRO"
+        ? "from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400"
+        : "from-[var(--muted)]/80 to-[var(--muted)] hover:from-[var(--muted)] hover:to-[var(--muted)]";
+
+  const statusText =
+    expired
+      ? "Expired"
+      : days === null
+        ? "No limit"
+        : days === 0
+          ? "Expires today"
+          : days === 1
+            ? "1 day left"
+            : `${days} days left`;
+
   return (
     <div ref={ref} className="relative">
       <button
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onClick={() => setOpen(!open)}
-        className="px-3 py-1.5 rounded-full text-xs font-bold tracking-wide text-white/95 shadow-md overflow-hidden
-          bg-gradient-to-r from-violet-600 via-fuchsia-500 to-amber-500 hover:from-violet-500 hover:via-fuchsia-400 hover:to-amber-400
-          transition-all duration-300 hover:shadow-lg hover:scale-[1.02] flex items-center gap-1.5"
+        className={`px-3 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-md overflow-hidden
+          flex items-center gap-1.5 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] bg-gradient-to-r ${planColors}
+          ${expired ? "opacity-60 text-white/80" : "text-white/95"}`}
       >
+        {expired && <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />}
         <Zap className="w-3.5 h-3.5" />
-        PRO+
+        {plan}
       </button>
       {open && (
         <div
           onMouseEnter={() => setOpen(true)}
           onMouseLeave={() => setOpen(false)}
-          className="absolute right-0 top-full mt-1.5 z-50 w-56 p-4 rounded-xl bg-[var(--card-bg)] border border-[var(--card-border)] shadow-xl
+          className="absolute right-0 top-full mt-1.5 z-50 w-64 p-4 rounded-xl bg-[var(--card-bg)] border border-[var(--card-border)] shadow-xl
             bg-gradient-to-b from-[var(--card-bg)] to-[var(--background)]"
         >
-          <p className="text-sm font-semibold text-[var(--foreground)] mb-1">PRO+</p>
-          <p className="text-xs text-[var(--muted)] mb-3">Full access to all features</p>
-          <p className="text-sm font-medium text-[var(--accent)]">
-            321 days left
+          <div className="flex items-center gap-2 mb-1">
+            <p className="text-sm font-semibold text-[var(--foreground)]">{plan}</p>
+            {expired && (
+              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/20 text-amber-500">
+                <AlertTriangle className="w-3 h-3" />
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-[var(--muted)] mb-3">{planDescription(plan)}</p>
+          <p className={`text-sm font-medium ${expired ? "text-[var(--negative)]" : "text-[var(--accent)]"} mb-2`}>
+            {statusText}
           </p>
+          {onOpenSubscription && (
+            <button
+              onClick={() => { onOpenSubscription(); setOpen(false); }}
+              className="text-xs font-medium text-[var(--accent)] hover:underline"
+            >
+              Change plan
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -164,11 +259,9 @@ function AccountSwitcher() {
   );
 }
 
-type HeaderProps = { onOpenDrawer?: () => void };
+type HeaderProps = { onOpenDrawer?: () => void; onOpenSubscription?: () => void };
 
-export function Header({ onOpenDrawer }: HeaderProps) {
-  const { openAppearancePicker } = useTheme();
-
+export function Header({ onOpenDrawer, onOpenSubscription }: HeaderProps) {
   return (
     <header className="h-16 md:h-16 flex items-center justify-between px-4 md:px-6 border-b border-[var(--card-border)] bg-[var(--card-bg)] shrink-0">
       <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -186,18 +279,8 @@ export function Header({ onOpenDrawer }: HeaderProps) {
         </div>
       </div>
       <div className="flex items-center gap-2 sm:gap-2 md:gap-4 ml-2 shrink-0">
-        <button
-          onClick={openAppearancePicker}
-          className="hidden md:flex p-2 rounded-xl text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-hover)] transition"
-          title="Theme & appearance"
-        >
-          <Palette className="w-5 h-5" />
-        </button>
-        <button className="relative p-2.5 md:p-2 rounded-xl text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--sidebar-hover)] transition">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--negative)]" />
-        </button>
-        <TariffBadge />
+        <BellButton />
+        <TariffBadge onOpenSubscription={onOpenSubscription} />
         <div className="flex items-center gap-1 border-l border-[var(--card-border)] pl-2">
           <AccountSwitcher />
         </div>

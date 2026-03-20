@@ -1,13 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import {
-  THEME_PRESETS,
-  type ThemePreset,
-  type ThemePresetId,
-  getPresetColors,
-} from "@/lib/theme-presets";
-import { AppearancePicker } from "@/components/AppearancePicker";
+import { THEME_PRESETS, type ThemePresetId, getPresetColors } from "@/lib/theme-presets";
 
 export type BaseTheme = "light" | "dark";
 
@@ -33,9 +27,6 @@ export type ThemeContextValue = {
   accentColor: string;
   positiveColor: string;
   negativeColor: string;
-  appearancePickerOpen: boolean;
-  openAppearancePicker: () => void;
-  closeAppearancePicker: () => void;
 };
 
 const STORAGE_THEME = "pairtrading-theme";
@@ -50,9 +41,6 @@ const ThemeContext = createContext<ThemeContextValue>({
   accentColor: "#9ddb00",
   positiveColor: "#9ddb00",
   negativeColor: "#db7500",
-  appearancePickerOpen: false,
-  openAppearancePicker: () => {},
-  closeAppearancePicker: () => {},
 });
 
 function loadAppearance(): AppearanceState {
@@ -111,7 +99,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     customAccent: null,
     customColors: null,
   });
-  const [appearancePickerOpen, setAppearancePickerOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -172,17 +159,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     accentColor: colors.accent,
     positiveColor: colors.positive,
     negativeColor: colors.negative,
-    appearancePickerOpen,
-    openAppearancePicker: useCallback(() => setAppearancePickerOpen(true), []),
-    closeAppearancePicker: useCallback(() => setAppearancePickerOpen(false), []),
   };
 
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-      <AppearancePicker open={appearancePickerOpen} onClose={() => setAppearancePickerOpen(false)} />
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export const useTheme = () => useContext(ThemeContext);

@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://nickly24-crypto-back-67f1.twc1.net/";
+const API_URL = "https://nickly24-crypto-back-67f1.twc1.net/";
+//const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -32,7 +33,7 @@ export async function api<T>(
 }
 
 export async function login(email: string, password: string) {
-  return api<{ access_token: string; user: { id: number; email: string; role: string } }>(
+  return api<{ access_token: string; user: { id: number; email: string; role: string } & SubscriptionData }>(
     "/api/auth/login",
     {
       method: "POST",
@@ -41,8 +42,49 @@ export async function login(email: string, password: string) {
   );
 }
 
+export type SubscriptionData = {
+  plan: "FREE" | "PRO" | "PRO+";
+  subscription_ends_at: string | null;
+};
+
 export async function me() {
-  return api<{ id: number; email: string; role: string }>("/api/auth/me");
+  return api<{ id: number; email: string; role: string } & SubscriptionData>("/api/auth/me");
+}
+
+export async function getSubscription() {
+  return api<SubscriptionData>("/api/subscription");
+}
+
+export async function getSubscriptionPrices() {
+  return api<{ prices: Record<string, number> }>("/api/subscription/prices");
+}
+
+/** Создаёт платёж в ЮKassa, возвращает URL для редиректа на оплату. */
+export async function createPaymentSubscription(plan: "PRO" | "PRO+") {
+  return api<{
+    payment_id: string;
+    confirmation_url: string;
+    amount_rub: number;
+    plan: string;
+  }>("/api/subscription/create-payment", {
+    method: "POST",
+    body: JSON.stringify({ plan }),
+  });
+}
+
+/** После возврата с ЮKassa: проверить статус платежа и при успехе обновить подписку в БД. */
+export async function syncSubscriptionAfterPayment() {
+  return api<{ synced: boolean; reason?: string; status?: string }>("/api/subscription/sync-after-payment", {
+    method: "POST",
+  });
+}
+
+/** Мок: сразу продлевает без оплаты (для тестов). */
+export async function purchaseSubscription(plan: "PRO" | "PRO+") {
+  return api<SubscriptionData>("/api/subscription/purchase", {
+    method: "POST",
+    body: JSON.stringify({ plan }),
+  });
 }
 
 export async function botStatus() {
@@ -93,6 +135,22 @@ export async function botLogs(limit = 50) {
   );
 }
 
+export type LivePosition = {
+  instId: string;
+  side: "long" | "short";
+  qty: number;
+  avgPx: number;
+  markPx: number;
+  liqPx: number;
+  lever: number;
+  upl: number;
+  distance_to_liq_pct?: number | null;
+};
+
+export async function botPositionsLive() {
+  return api<{ positions: LivePosition[] }>("/api/bot/positions-live");
+}
+
 export async function analyticsSummary() {
   return api<{
     trades_count: number;
@@ -121,6 +179,33 @@ export async function analyticsTrades(limit = 50) {
   }>(`/api/analytics/trades?limit=${limit}`);
 }
 
+export type PairPosition = {
+  qty: number;
+  upl: number;
+  avg_price: number;
+  side?: string;
+};
+
+export async function analyticsTradesDetailed(limit = 100) {
+  return api<{
+    trades: Array<{
+      id: number;
+      opened_at: string | null;
+      closed_at: string | null;
+      duration_sec: number;
+      entry_spread_pct: number;
+      exit_spread_pct: number;
+      pnl_pct: number;
+      pnl_usdt: number;
+      total_volume_usdt?: number;
+      long_basket: string | null;
+      short_basket: string | null;
+      reason: string | null;
+      pairs_detail: Record<string, PairPosition>;
+    }>;
+  }>(`/api/analytics/trades/detailed?limit=${limit}`);
+}
+
 export async function getOkxKeys() {
   return api<{ masked_api_key: string | null; has_secret: boolean; has_passphrase: boolean }>(
     "/api/profile/okx-keys"
@@ -147,6 +232,11 @@ export type BotConfigData = {
 
 export async function getBotConfig() {
   return api<BotConfigData>("/api/bot/config");
+}
+
+/** Read-only config for user_id=1. Requires PRO+ plan. */
+export async function getDeveloperConfig() {
+  return api<BotConfigData>("/api/developer/config");
 }
 
 export async function updateBotConfig(body: {
