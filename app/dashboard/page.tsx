@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import Link from "next/link";
 import {
@@ -137,8 +137,11 @@ function fmtDuration(sec: number | null | undefined) {
 
 function DashboardPageInner() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const paymentParam = searchParams.get("payment");
   const { refreshUser } = useAuth();
+  const paymentReturnHandledRef = useRef(false);
   const [tourOpen, setTourOpen] = useState(false);
   const paymentSuccessTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -243,26 +246,39 @@ function DashboardPageInner() {
   }, []);
 
   useEffect(() => {
-    if (searchParams.get("payment") !== "success") return;
+    if (paymentParam !== "success") {
+      paymentReturnHandledRef.current = false;
+      return;
+    }
+    if (paymentReturnHandledRef.current) return;
+    paymentReturnHandledRef.current = true;
+
+    let cancelled = false;
     (async () => {
       try {
         await syncSubscriptionAfterPayment();
       } catch (_) {
         // ignore network errors; user may still have paid and webhook will apply
       }
+      if (cancelled) return;
       await refreshUser();
+      if (cancelled) return;
       setPaymentSuccess(true);
-      router.replace("/dashboard", { scroll: false });
+      // pathname вместо литерала — корректно при basePath; replace убирает query без лишних циклов
+      router.replace(pathname, { scroll: false });
       if (paymentSuccessTimeoutRef.current) clearTimeout(paymentSuccessTimeoutRef.current);
       paymentSuccessTimeoutRef.current = setTimeout(() => setPaymentSuccess(false), 4000);
     })();
+
     return () => {
+      cancelled = true;
+      paymentReturnHandledRef.current = false;
       if (paymentSuccessTimeoutRef.current) {
         clearTimeout(paymentSuccessTimeoutRef.current);
         paymentSuccessTimeoutRef.current = null;
       }
     };
-  }, [searchParams, refreshUser, router]);
+  }, [paymentParam, pathname, refreshUser, router]);
 
   async function handleStart() {
     setBotActionLoading(true);

@@ -1,14 +1,17 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 function ChartRedirect() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const mode = searchParams.get("mode") === "instruments" ? "instruments" : "spread";
+  const redirectedRef = useRef(false);
 
   useEffect(() => {
+    if (redirectedRef.current) return;
+    redirectedRef.current = true;
     router.replace(`/trading?mode=${mode}`);
   }, [router, mode]);
 

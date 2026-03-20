@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/providers/auth";
 import { isExpired } from "@/lib/subscription";
 import { SubscriptionModalProvider } from "@/providers/subscription-modal";
@@ -15,12 +15,15 @@ import { AlertTriangle, Zap } from "lucide-react";
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, switchingAccount } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [user, loading, router]);
+    if (loading || user) return;
+    if (pathname === "/login" || pathname.startsWith("/login")) return;
+    router.replace("/login");
+  }, [user, loading, router, pathname]);
 
   if (loading) {
     return (
