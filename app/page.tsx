@@ -27,15 +27,10 @@ export default function HomePage() {
   if (user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
+    <div className="min-h-screen bg-[var(--background)] bg-mesh">
       <LandingHeader />
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-indigo-950/30 via-transparent to-transparent" />
-        <LandingHero />
-      </div>
-      <div className="relative bg-[var(--background)]">
-        <LandingContent />
-      </div>
+      <LandingHero />
+      <LandingContent />
     </div>
   );
 }

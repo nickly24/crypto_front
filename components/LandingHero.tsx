@@ -3,6 +3,14 @@
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { ArrowRight, Activity, Clock, Shield, TrendingUp } from "lucide-react";
+
+const heroStats = [
+  { label: "Avg PnL / trade", value: "0.5–2%", icon: TrendingUp },
+  { label: "Pairs parallel", value: "10", icon: Activity },
+  { label: "Uptime", value: "24/7", icon: Clock },
+  { label: "Exchange", value: "OKX", icon: Shield },
+];
 
 export function LandingHero() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -21,123 +29,139 @@ export function LandingHero() {
     return () => el.removeEventListener("mousemove", onMove);
   }, []);
 
-  const dx = (mouse.x - 0.5) * 40;
-  const dy = (mouse.y - 0.5) * 30;
+  const dx = (mouse.x - 0.5) * 36;
+  const dy = (mouse.y - 0.5) * 28;
 
   return (
     <section
       ref={containerRef}
-      className="relative min-h-[85vh] flex items-center justify-center overflow-hidden"
+      className="relative min-h-[min(92vh,56rem)] flex flex-col items-center justify-center overflow-hidden pt-6 pb-16 sm:pb-20"
     >
-      {/* 3D parallax — brighter, more visible */}
+      {/* Ambient orbs */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          transform: `perspective(800px) rotateX(${dy * 0.8}deg) rotateY(${dx * 0.8}deg)`,
+          transform: `perspective(900px) rotateX(${dy * 0.35}deg) rotateY(${dx * 0.35}deg)`,
         }}
       >
         <div
-          className="absolute w-[550px] h-[550px] rounded-full blur-[110px]"
+          className="absolute w-[min(42rem,90vw)] h-[min(42rem,90vw)] rounded-full blur-[120px] opacity-90"
           style={{
-            background: "radial-gradient(circle, rgba(99,102,241,0.5) 0%, rgba(99,102,241,0.15) 40%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(157,219,0,0.22) 0%, rgba(99,102,241,0.08) 45%, transparent 70%)",
             left: "50%",
-            top: "25%",
-            transform: `translate(calc(-50% + ${dx * 15}px), calc(-50% + ${dy * 15}px))`,
+            top: "18%",
+            transform: `translate(calc(-50% + ${dx * 12}px), calc(-50% + ${dy * 12}px))`,
           }}
         />
         <div
-          className="absolute w-[400px] h-[400px] rounded-full blur-[100px]"
+          className="absolute w-80 h-80 rounded-full blur-[100px] opacity-70"
           style={{
-            background: "radial-gradient(circle, rgba(59,130,246,0.45) 0%, transparent 70%)",
-            right: "10%",
-            bottom: "15%",
-            transform: `translate(${-dx * 12}px, ${-dy * 12}px)`,
+            background: "radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%)",
+            right: "8%",
+            bottom: "12%",
+            transform: `translate(${-dx * 10}px, ${-dy * 10}px)`,
           }}
         />
         <div
-          className="absolute w-[320px] h-[320px] rounded-full blur-[90px]"
+          className="absolute w-72 h-72 rounded-full blur-[90px] opacity-60"
           style={{
-            background: "radial-gradient(circle, rgba(168,85,247,0.4) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(168,85,247,0.18) 0%, transparent 70%)",
             left: "5%",
-            bottom: "20%",
-            transform: `translate(${dx * 10}px, ${dy * 10}px)`,
-          }}
-        />
-        <div
-          className="absolute w-[260px] h-[260px] rounded-full blur-[70px]"
-          style={{
-            background: "radial-gradient(circle, rgba(236,72,153,0.3) 0%, transparent 70%)",
-            left: "60%",
-            top: "10%",
-            transform: `translate(${-dx * 8}px, ${dy * 8}px)`,
-          }}
-        />
-        <div
-          className="absolute w-64 h-64 rounded-2xl border border-indigo-400/25 bg-indigo-500/5 backdrop-blur-sm"
-          style={{
-            right: "20%",
-            top: "30%",
-            transform: `translate(${-dx * 18}px, ${-dy * 18}px) rotate(${dx * 8}deg)`,
-          }}
-        />
-        <div
-          className="absolute w-36 h-36 rounded-full border border-blue-400/30 bg-blue-500/5"
-          style={{
-            left: "25%",
-            top: "35%",
-            transform: `translate(${dx * 20}px, ${dy * 20}px)`,
-          }}
-        />
-        <div
-          className="absolute w-24 h-24 rounded-xl border border-purple-400/30 bg-purple-500/10"
-          style={{
-            right: "35%",
-            bottom: "30%",
-            transform: `translate(${dx * -15}px, ${dy * -15}px) rotate(${-dx * 6}deg)`,
+            bottom: "18%",
+            transform: `translate(${dx * 8}px, ${dy * 8}px)`,
           }}
         />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6"
-        >
-          <span className="text-white">Automated </span>
-          <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent">
-            pair trading
-          </span>
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-lg text-[var(--muted)] max-w-2xl mx-auto mb-10"
-        >
-          Trade crypto pairs on the spread. The bot enters and exits per your rules.
-          Minimize risk, maximize steady returns.
-        </motion.p>
+      {/* Grid + vignette */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.35] dark:opacity-[0.45]"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, var(--card-border) 1px, transparent 1px),
+            linear-gradient(to bottom, var(--card-border) 1px, transparent 1px)
+          `,
+          backgroundSize: "64px 64px",
+          maskImage: "radial-gradient(ellipse 75% 60% at 50% 40%, black 20%, transparent 75%)",
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--background)]/40 to-[var(--background)] pointer-events-none" />
+
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-5 sm:px-6 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          transition={{ duration: 0.5 }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--accent)]/25 bg-[var(--accent)]/8 backdrop-blur-md mb-8"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-40" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent)]" />
+          </span>
+          <span className="text-sm font-medium text-[var(--accent)] tracking-wide">Automated pair trading on OKX</span>
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.05 }}
+          className="text-[2.25rem] sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6 leading-[1.1]"
+        >
+          <span className="bg-gradient-to-b from-[var(--foreground)] to-[var(--muted)] bg-clip-text text-transparent">
+            Automated{" "}
+          </span>
+          <span className="bg-gradient-to-r from-emerald-400 via-[var(--accent)] to-lime-300 bg-clip-text text-transparent">
+            pair trading
+          </span>
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.12 }}
+          className="text-base sm:text-lg text-[var(--muted)] max-w-2xl mx-auto mb-10 leading-relaxed"
+        >
+          Trade crypto pairs on the spread. The bot enters and exits per your rules — minimize risk, aim for steady
+          returns.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-14 sm:mb-16"
         >
           <Link
             href="/login"
-            className="px-8 py-3 rounded-xl bg-[#9ddb00] text-slate-900 font-semibold hover:opacity-90 transition shadow-lg shadow-[#9ddb00]/25"
+            className="group inline-flex items-center justify-center gap-2 min-w-[200px] px-8 py-3.5 rounded-full bg-[var(--accent)] text-slate-900 font-semibold shadow-xl shadow-[var(--accent)]/25 hover:brightness-105 transition"
           >
             Get started
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
           <Link
             href="/guide"
-            className="px-8 py-3 rounded-xl border border-white/20 text-white/90 font-medium hover:bg-white/5 transition"
+            className="inline-flex items-center justify-center min-w-[200px] px-8 py-3.5 rounded-full border border-[var(--card-border)] bg-[var(--card-bg)]/40 text-[var(--foreground)] font-medium backdrop-blur-sm hover:border-[var(--accent)]/35 hover:bg-[var(--sidebar-hover)] transition"
           >
             How it works
           </Link>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.28 }}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto"
+        >
+          {heroStats.map(({ label, value, icon: Icon }) => (
+            <div
+              key={label}
+              className="relative rounded-2xl border border-[var(--card-border)] bg-[var(--card-bg)]/60 backdrop-blur-xl px-4 py-4 sm:py-5 text-center shadow-[var(--shadow-sm)] hover:border-[var(--accent)]/25 transition-colors"
+            >
+              <Icon className="w-5 h-5 text-[var(--accent)] mx-auto mb-2 opacity-90" />
+              <div className="text-lg sm:text-xl font-bold text-[var(--foreground)] tabular-nums">{value}</div>
+              <div className="text-xs text-[var(--muted)] mt-1 leading-snug">{label}</div>
+            </div>
+          ))}
         </motion.div>
       </div>
     </section>

@@ -1,4 +1,4 @@
-const API_URL = "https://nickly24-crypto-back-67f1.twc1.net/";
+const API_URL = "https://nickly24-crypto-back-5acf.twc1.net/";
 //const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 function getToken(): string | null {
