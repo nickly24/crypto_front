@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ChartView } from "@/components/ChartView";
 import { botStatus, getBotConfig } from "@/lib/api";
 import { TrendingUp } from "lucide-react";
+import { isAprilFoolsActive, jokeSpreadPct } from "@/lib/april-fools";
 
 function num(v: number | string | null | undefined): number {
   if (v == null) return 0;
@@ -40,6 +41,17 @@ function TradingPageContent() {
       }
     });
   }, []);
+
+  const fool = isAprilFoolsActive();
+  const displaySpreadLevels = useMemo(() => {
+    if (!spreadLevels) return null;
+    if (!fool) return spreadLevels;
+    return {
+      entry: jokeSpreadPct(spreadLevels.entry),
+      tp: spreadLevels.tp != null ? jokeSpreadPct(spreadLevels.tp) : null,
+      sl: spreadLevels.sl != null ? jokeSpreadPct(spreadLevels.sl) : null,
+    };
+  }, [spreadLevels, fool]);
 
   return (
     <div className="w-full max-w-[1600px] mx-auto">
@@ -82,7 +94,7 @@ function TradingPageContent() {
           <ChartView
             mode={mode}
             hours={hours}
-            spreadLevels={spreadLevels}
+            spreadLevels={displaySpreadLevels}
             configBaskets={configBaskets}
           />
         </div>

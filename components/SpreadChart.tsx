@@ -7,6 +7,7 @@ import { utcMsToLocalChartTime } from "@/lib/chart-time";
 import { Plus, Trash2 } from "lucide-react";
 import { SpreadLiveMini } from "./SpreadLiveMini";
 import { useTheme } from "@/providers/theme";
+import { isAprilFoolsActive, jokeSpreadPct } from "@/lib/april-fools";
 
 const DRAWINGS_KEY = "chart-drawings-spread";
 
@@ -85,9 +86,10 @@ export function SpreadChart({ hours = 10, spreadLevels }: SpreadChartProps) {
     getChartSpread(hours).then((r) => {
       setLoading(false);
       if (r.ok && r.data && seriesRef.current) {
+        const fool = isAprilFoolsActive();
         const data: LineData[] = r.data.points.map((p) => ({
           time: utcMsToLocalChartTime(new Date(p.ts).getTime()) as LineData["time"],
-          value: p.spread_pct,
+          value: fool ? jokeSpreadPct(p.spread_pct) : p.spread_pct,
         }));
         setPointsCount(data.length);
         seriesRef.current.setData(data);

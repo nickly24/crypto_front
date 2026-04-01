@@ -1,11 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { TradeDetailExpandable } from "@/components/TradeDetailExpandable";
 import { analyticsSummary, analyticsTradesDetailed, type PairPosition } from "@/lib/api";
 import { parseBackendUtcDate } from "@/lib/date";
+import {
+  isAprilFoolsActive,
+  jokePairsDetail,
+  jokePct,
+  jokeSpreadPct,
+  jokeUsdt,
+} from "@/lib/april-fools";
 
 type Trade = {
   id: number;
@@ -52,30 +59,43 @@ export default function AnalyticsPage() {
     analyticsTradesDetailed(100).then((r) => r.ok && r.data?.trades && setTrades(r.data.trades));
   }, []);
 
+  const fool = isAprilFoolsActive();
+  const displaySummary = useMemo(() => {
+    if (!summary) return null;
+    if (!fool) return summary;
+    return {
+      ...summary,
+      pnl_total_pct: jokePct(summary.pnl_total_pct),
+      pnl_total_usdt: jokeUsdt(summary.pnl_total_usdt),
+      avg_trade_pct: jokePct(summary.avg_trade_pct),
+      winrate_pct: jokePct(summary.winrate_pct),
+    };
+  }, [summary, fool]);
+
   return (
     <DashboardLayout>
       <h1 className="text-xl md:text-2xl font-semibold mb-4 md:mb-6">Analytics</h1>
 
-      {summary && (
+      {displaySummary && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8"
         >
           {[
-            { label: "Trades", value: summary.trades_count },
-            { label: "Win rate", value: `${summary.winrate_pct.toFixed(1)}%` },
+            { label: "Trades", value: displaySummary.trades_count },
+            { label: "Win rate", value: `${displaySummary.winrate_pct.toFixed(1)}%` },
             {
               label: "PnL %",
-              value: `${summary.pnl_total_pct >= 0 ? "+" : ""}${summary.pnl_total_pct.toFixed(2)}%`,
-              positive: summary.pnl_total_pct >= 0,
+              value: `${displaySummary.pnl_total_pct >= 0 ? "+" : ""}${displaySummary.pnl_total_pct.toFixed(2)}%`,
+              positive: displaySummary.pnl_total_pct >= 0,
             },
             {
               label: "PnL USDT",
-              value: `${summary.pnl_total_usdt >= 0 ? "+" : ""}$${summary.pnl_total_usdt.toFixed(2)}`,
-              positive: summary.pnl_total_usdt >= 0,
+              value: `${displaySummary.pnl_total_usdt >= 0 ? "+" : ""}$${displaySummary.pnl_total_usdt.toFixed(2)}`,
+              positive: displaySummary.pnl_total_usdt >= 0,
             },
-            { label: "Avg trade", value: `${summary.avg_trade_pct.toFixed(2)}%` },
+            { label: "Avg trade", value: `${displaySummary.avg_trade_pct.toFixed(2)}%` },
           ].map(({ label, value, positive }) => (
             <div key={label} className="card-glass p-4">
               <p className="text-sm text-[var(--muted)]">{label}</p>
@@ -142,16 +162,35 @@ export default function AnalyticsPage() {
                       <td className="py-3 pr-4 text-xs">{fmtDate(t.opened_at)}</td>
                       <td className="py-3 pr-4 text-xs">{fmtDate(t.closed_at)}</td>
                       <td className="py-3 pr-4 text-xs">{fmtDuration(t.duration_sec)}</td>
-                      <td className="py-3 pr-4">{Number(t.entry_spread_pct).toFixed(3)}</td>
-                      <td className="py-3 pr-4">{Number(t.exit_spread_pct).toFixed(3)}</td>
-                      <td className={`py-3 pr-4 font-medium ${Number(t.pnl_pct) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                        {Number(t.pnl_pct) >= 0 ? "+" : ""}{Number(t.pnl_pct).toFixed(2)}%
+                      <td className="py-3 pr-4">
+                        {(fool ? jokeSpreadPct(Number(t.entry_spread_pct)) : Number(t.entry_spread_pct)).toFixed(3)}
                       </td>
-                      <td className={`py-3 pr-4 ${Number(t.pnl_usdt) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                        ${Number(t.pnl_usdt).toFixed(2)}
+                      <td className="py-3 pr-4">
+                        {(fool ? jokeSpreadPct(Number(t.exit_spread_pct)) : Number(t.exit_spread_pct)).toFixed(3)}
+                      </td>
+                      <td
+                        className={`py-3 pr-4 font-medium ${
+                          (fool ? jokePct(Number(t.pnl_pct)) : Number(t.pnl_pct)) >= 0
+                            ? "text-[var(--positive)]"
+                            : "text-[var(--negative)]"
+                        }`}
+                      >
+                        {(fool ? jokePct(Number(t.pnl_pct)) : Number(t.pnl_pct)) >= 0 ? "+" : ""}
+                        {(fool ? jokePct(Number(t.pnl_pct)) : Number(t.pnl_pct)).toFixed(2)}%
+                      </td>
+                      <td
+                        className={`py-3 pr-4 ${
+                          (fool ? jokeUsdt(Number(t.pnl_usdt)) : Number(t.pnl_usdt)) >= 0
+                            ? "text-[var(--positive)]"
+                            : "text-[var(--negative)]"
+                        }`}
+                      >
+                        ${(fool ? jokeUsdt(Number(t.pnl_usdt)) : Number(t.pnl_usdt)).toFixed(2)}
                       </td>
                       <td className="py-3 pr-4 text-xs text-[var(--muted)]">
-                        {t.total_volume_usdt != null ? `$${Number(t.total_volume_usdt).toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}
+                        {t.total_volume_usdt != null
+                          ? `$${(fool ? jokeUsdt(Number(t.total_volume_usdt)) : Number(t.total_volume_usdt)).toLocaleString("en-US", { maximumFractionDigits: 0 })}`
+                          : "—"}
                       </td>
                       <td className="py-3 text-xs text-[var(--muted)]">{t.reason || "—"}</td>
                     </tr>
@@ -160,7 +199,7 @@ export default function AnalyticsPage() {
                         <tr key={`${t.id}-detail`} className="border-none">
                           <td colSpan={11} className="p-0 bg-[var(--card-border)]/10 align-top">
                             <TradeDetailExpandable
-                              pairsDetail={t.pairs_detail}
+                              pairsDetail={fool && t.pairs_detail ? jokePairsDetail(t.pairs_detail) : t.pairs_detail!}
                               longBasket={t.long_basket}
                               shortBasket={t.short_basket}
                             />
