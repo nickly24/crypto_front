@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+/** Базовый URL бэкенда (без завершающего /). */
+export const API_URL = "https://nickly24-crypto-back-258e.twc1.net";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;

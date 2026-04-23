@@ -2,9 +2,8 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { API_URL } from "@/lib/api";
 import { useAuth } from "./auth";
-
-const WS_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export type BotStatusData = {
   alive?: boolean;
@@ -63,7 +62,7 @@ export function BotStatusProvider({ children }: { children: React.ReactNode }) {
     const token = localStorage.getItem("access_token");
     if (!token) return;
 
-    const s = io(WS_URL, { transports: ["websocket", "polling"], autoConnect: true });
+    const s = io(API_URL, { transports: ["websocket", "polling"], autoConnect: true });
     setSocket(s);
 
     s.on("connect", () => {
