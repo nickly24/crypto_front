@@ -12,6 +12,7 @@ import {
   botStart,
   botStop,
   botClosePosition,
+  botResetSpread,
   getBotConfig,
   syncSubscriptionAfterPayment,
   botPositionsLive,
@@ -59,18 +60,6 @@ import { DASHBOARD_TOUR_STEPS } from "@/lib/tour-steps";
 import { useFiatRates } from "@/lib/useFiatRates";
 import { useAuth } from "@/providers/auth";
 import { useTheme } from "@/providers/theme";
-import {
-  APRIL_FOOLS_POSITION_TARGET_USDT,
-  foolLivePositionsUpl,
-  foolPositionBreakdown,
-  jokeLiquidationBarRatio,
-  jokePairsDetail,
-  jokePct,
-  jokeQty,
-  jokeSpreadPct,
-  jokeUsdt,
-  isAprilFoolsActive,
-} from "@/lib/april-fools";
 
 type BotStatusData = {
   alive?: boolean;
@@ -178,7 +167,6 @@ function DashboardPageInner() {
   const pollVersionRef = useRef(0);
   const fiatRates = useFiatRates();
   const { positiveColor, negativeColor, accentColor } = useTheme();
-  const fool = isAprilFoolsActive();
 
   function fetchConfig() {
     getBotConfig().then((r) => {
@@ -201,8 +189,10 @@ function DashboardPageInner() {
       if (r.ok && r.data) {
         const d = r.data as unknown as BotStatusData;
         setStatus(d);
+        const isBotActive =
+          !!d.alive || d.db_state?.actual_state === "running" || d.db_state?.actual_state === "starting";
         const sp = d.db_state?.current_spread_pct;
-        if (sp != null) {
+        if (isBotActive && sp != null) {
           const v = num(sp);
           setSpreadHistory((prev) => {
             const now = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -354,8 +344,42 @@ function DashboardPageInner() {
     setTimeout(() => { setBotActionLoading(false); setBotActionLabel(null); }, 3000);
   }
 
+  async function handleResetSpread() {
+    setBotActionLoading(true);
+    setBotActionLabel("Resetting spread...");
+    try {
+      const r = await botResetSpread();
+      if (r.ok) {
+        setBotActionLabel("Spread reset");
+        fetchStatus();
+        setSpreadHistory((prev) => {
+          const now = new Date().toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+          if (prev.length === 0) return [{ t: now, v: 0 }];
+          const next = [...prev];
+          next[next.length - 1] = { ...next[next.length - 1], v: 0 };
+          return next;
+        });
+      } else {
+        setBotActionLabel("Spread reset failed");
+      }
+    } catch {
+      setBotActionLabel("Spread reset error");
+    }
+    setTimeout(() => {
+      setBotActionLoading(false);
+      setBotActionLabel(null);
+    }, 1500);
+  }
+
   const ds = status?.db_state;
+  const isBotActive =
+    !!status?.alive || ds?.actual_state === "running" || ds?.actual_state === "starting";
   const spread = ds?.current_spread_pct != null ? num(ds.current_spread_pct) : null;
+  const displayedSpread = spread;
   const balance = num(ds?.balance_usdt);
   const available = num(ds?.available_usdt);
   const pnl = num(ds?.pnl_total_pct);
@@ -366,24 +390,6 @@ function DashboardPageInner() {
   const entrySpread = ds?.entry_spread_pct != null ? num(ds.entry_spread_pct) : null;
   const ping = ds?.okx_ping_ms ?? null;
   const longBasket = ds?.long_basket ?? null;
-
-  const dBal = fool ? jokeUsdt(balance) : balance;
-  const dAvail = fool ? jokeUsdt(available) : available;
-  const dPnl = fool ? jokePct(pnl) : pnl;
-  const dPnlLong = fool ? jokePct(pnlLong) : pnlLong;
-  const dPnlShort = fool ? jokePct(pnlShort) : pnlShort;
-  const dPnlUsdt =
-    fool && positionOpen
-      ? APRIL_FOOLS_POSITION_TARGET_USDT
-      : pnlUsdt != null
-        ? fool
-          ? jokeUsdt(pnlUsdt)
-          : pnlUsdt
-        : null;
-  const dEntrySpread = entrySpread != null ? (fool ? jokeSpreadPct(entrySpread) : entrySpread) : null;
-  const sumPnlPct = summary ? (fool ? jokePct(summary.pnl_total_pct) : summary.pnl_total_pct) : null;
-  const sumPnlUsdt = summary ? (fool ? jokeUsdt(summary.pnl_total_usdt) : summary.pnl_total_usdt) : null;
-  const sumWinrate = summary ? (fool ? jokePct(summary.winrate_pct) : summary.winrate_pct) : null;
 
   const tpPct = config?.params?.take_profit_pct != null ? Number(config.params.take_profit_pct) : null;
   const slPct = config?.params?.stop_loss_pct != null ? Number(config.params.stop_loss_pct) : null;
@@ -397,21 +403,6 @@ function DashboardPageInner() {
     const deviation = spread != null ? spread - entrySpread : null;
     return { entry: entrySpread, tp, sl, deviation };
   }, [positionOpen, entrySpread, longBasket, tpPct, slPct, slEnabled, spread]);
-
-  const displaySpread = useMemo(() => {
-    if (spread == null) return null;
-    return fool ? jokeSpreadPct(spread) : spread;
-  }, [spread, fool]);
-
-  const displaySpreadLevels = useMemo(() => {
-    if (!spreadLevels) return null;
-    if (!fool) return spreadLevels;
-    const entry = jokeSpreadPct(spreadLevels.entry);
-    const tp = spreadLevels.tp != null ? jokeSpreadPct(spreadLevels.tp) : null;
-    const sl = spreadLevels.sl != null ? jokeSpreadPct(spreadLevels.sl) : null;
-    const deviation = displaySpread != null ? displaySpread - entry : null;
-    return { entry, tp, sl, deviation };
-  }, [spreadLevels, fool, displaySpread]);
 
   const quotes: Record<string, number> = useMemo(() => {
     if (!ds?.quotes_snapshot) return {};
@@ -479,41 +470,13 @@ function DashboardPageInner() {
     return { longItems, shortItems, longTotal, shortTotal, totalCommission };
   }, [positionOpen, config?.baskets, ds?.positions_data, ds?.long_basket, ds?.short_basket]);
 
-  const displayPositionsBreakdown = useMemo(() => {
-    if (!positionsBreakdown) return null;
-    if (!fool) return positionsBreakdown;
-    return foolPositionBreakdown(positionsBreakdown);
-  }, [positionsBreakdown, fool]);
-
-  const profitData = useMemo(() => {
-    const base = [
-      { period: "1H", value: summary ? summary.avg_trade_pct * 0.3 : 0 },
-      { period: "1D", value: summary ? summary.avg_trade_pct * 0.6 : 0 },
-      { period: "1W", value: summary ? summary.avg_trade_pct : 0 },
-      { period: "1M", value: summary ? summary.pnl_total_pct * 0.5 : 0 },
-      { period: "ALL", value: summary ? summary.pnl_total_pct : 0 },
-    ];
-    if (!fool) return base;
-    return base.map((row) => ({ ...row, value: jokePct(row.value) }));
-  }, [summary, fool]);
-
-  const displayLivePositions = useMemo(() => {
-    if (!livePositions || !fool) return livePositions;
-    return foolLivePositionsUpl(livePositions).map((p) => ({
-      ...p,
-      qty: jokeQty(p.qty),
-    }));
-  }, [livePositions, fool]);
-
-  const displaySpreadHistory = useMemo(
-    () => (fool ? spreadHistory.map((d) => ({ ...d, v: jokeSpreadPct(d.v) })) : spreadHistory),
-    [spreadHistory, fool]
-  );
-
-  const displayPnlHistory = useMemo(
-    () => (fool ? pnlHistory.map((d) => ({ ...d, v: jokePct(d.v) })) : pnlHistory),
-    [pnlHistory, fool]
-  );
+  const profitData = [
+    { period: "1H", value: summary ? summary.avg_trade_pct * 0.3 : 0 },
+    { period: "1D", value: summary ? summary.avg_trade_pct * 0.6 : 0 },
+    { period: "1W", value: summary ? summary.avg_trade_pct : 0 },
+    { period: "1M", value: summary ? summary.pnl_total_pct * 0.5 : 0 },
+    { period: "ALL", value: summary ? summary.pnl_total_pct : 0 },
+  ];
 
   const anim = (delay: number) => ({
     initial: { opacity: 0, y: 20 } as const,
@@ -572,38 +535,38 @@ function DashboardPageInner() {
           <div className="flex items-center gap-2">
             <CryptoIcon symbol="USDT" size={28} />
             <p className="text-3xl font-semibold">
-              {dBal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
           <p className="text-xs text-[var(--muted)] mt-1">
-            Available: {dAvail.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            Available: {available.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="p-2 rounded bg-[var(--background)]/50 text-center">
               <p className="text-xs text-[var(--muted)]">PnL Long</p>
-              <p className={`text-sm font-semibold ${positionOpen ? (dPnlLong >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]") : "text-[var(--muted)]"}`}>
-                {positionOpen ? `${dPnlLong >= 0 ? "+" : ""}${dPnlLong.toFixed(3)}%` : "—"}
+              <p className={`text-sm font-semibold ${positionOpen ? (pnlLong >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]") : "text-[var(--muted)]"}`}>
+                {positionOpen ? `${pnlLong >= 0 ? "+" : ""}${pnlLong.toFixed(3)}%` : "—"}
               </p>
             </div>
             <div className="p-2 rounded bg-[var(--background)]/50 text-center">
               <p className="text-xs text-[var(--muted)]">PnL Short</p>
-              <p className={`text-sm font-semibold ${positionOpen ? (dPnlShort >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]") : "text-[var(--muted)]"}`}>
-                {positionOpen ? `${dPnlShort >= 0 ? "+" : ""}${dPnlShort.toFixed(3)}%` : "—"}
+              <p className={`text-sm font-semibold ${positionOpen ? (pnlShort >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]") : "text-[var(--muted)]"}`}>
+                {positionOpen ? `${pnlShort >= 0 ? "+" : ""}${pnlShort.toFixed(3)}%` : "—"}
               </p>
             </div>
             <div className="p-2 rounded bg-[var(--background)]/50 text-center">
               <p className="text-xs text-[var(--muted)]">PnL Total</p>
-              <p className={`text-sm font-semibold ${positionOpen ? (dPnl >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]") : "text-[var(--muted)]"}`}>
-                {positionOpen ? `${dPnl >= 0 ? "+" : ""}${dPnl.toFixed(3)}%` : "—"}
+              <p className={`text-sm font-semibold ${positionOpen ? (pnl >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]") : "text-[var(--muted)]"}`}>
+                {positionOpen ? `${pnl >= 0 ? "+" : ""}${pnl.toFixed(3)}%` : "—"}
               </p>
-              {positionOpen && dPnlUsdt != null && (
-                <p className={`text-xs mt-0.5 ${dPnlUsdt >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                  {dPnlUsdt >= 0 ? "+" : ""}{dPnlUsdt.toLocaleString("en-US", { minimumFractionDigits: 2 })} USDT
+              {positionOpen && pnlUsdt != null && (
+                <p className={`text-xs mt-0.5 ${pnlUsdt >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                  {pnlUsdt >= 0 ? "+" : ""}{pnlUsdt.toLocaleString("en-US", { minimumFractionDigits: 2 })} USDT
                 </p>
               )}
-              {positionOpen && displayPositionsBreakdown && displayPositionsBreakdown.totalCommission !== 0 && (
+              {positionOpen && positionsBreakdown && positionsBreakdown.totalCommission !== 0 && (
                 <p className="text-xs mt-0.5 text-[var(--muted)]">
-                  Fee: {displayPositionsBreakdown.totalCommission >= 0 ? "+" : ""}{displayPositionsBreakdown.totalCommission.toFixed(2)}
+                  Fee: {positionsBreakdown.totalCommission >= 0 ? "+" : ""}{positionsBreakdown.totalCommission.toFixed(2)}
                 </p>
               )}
             </div>
@@ -613,19 +576,19 @@ function DashboardPageInner() {
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-[var(--muted)]/80">$</span>
                 <span className="text-xs text-[var(--muted)]/90">
-                  {dBal.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
+                  {balance.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} USD
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-[var(--muted)]/80">€</span>
                 <span className="text-xs text-[var(--muted)]/90">
-                  {(dBal * fiatRates.EUR).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} EUR
+                  {(balance * fiatRates.EUR).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} EUR
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-[var(--muted)]/80">₽</span>
                 <span className="text-xs text-[var(--muted)]/90">
-                  {(dBal * fiatRates.RUB).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} RUB
+                  {(balance * fiatRates.RUB).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} RUB
                 </span>
               </div>
             </div>
@@ -656,47 +619,55 @@ function DashboardPageInner() {
           <div className="flex items-baseline gap-3 mb-1">
             <AnimatePresence mode="wait">
               <motion.span
-                key={displaySpread ?? "na"}
+                key={displayedSpread ?? "na"}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="text-2xl font-bold text-[var(--accent)]"
               >
-                {displaySpread != null ? `${displaySpread.toFixed(4)}%` : "—"}
+                {displayedSpread != null ? `${displayedSpread.toFixed(4)}%` : "—"}
               </motion.span>
             </AnimatePresence>
             {ping != null && (
               <span className="text-xs text-[var(--muted)]">{ping}ms</span>
             )}
+            <button
+              type="button"
+              onClick={handleResetSpread}
+              disabled={botActionLoading}
+              className="ml-auto px-2.5 py-1 rounded-md bg-amber-400/20 text-amber-300 border border-amber-300/30 hover:bg-amber-400/30 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition"
+            >
+              Reset spread
+            </button>
           </div>
 
-          {displaySpreadLevels && (
+          {spreadLevels && (
             <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2 text-xs">
               <span className="flex items-center gap-1">
                 <span className="w-3 h-0.5 bg-amber-400 inline-block" style={{ borderTop: "2px dashed" }} />
-                <span className="text-[var(--muted)]">Entry: {displaySpreadLevels.entry.toFixed(4)}%</span>
+                <span className="text-[var(--muted)]">Entry: {spreadLevels.entry.toFixed(4)}%</span>
               </span>
-              {displaySpreadLevels.sl != null && (
+              {spreadLevels.sl != null && (
                 <span className="flex items-center gap-1">
                   <span className="w-3 h-0.5 inline-block" style={{ borderTop: `2px dashed ${negativeColor}` }} />
-                  <span className="text-[var(--muted)]">SL: {displaySpreadLevels.sl.toFixed(4)}%</span>
+                  <span className="text-[var(--muted)]">SL: {spreadLevels.sl.toFixed(4)}%</span>
                 </span>
               )}
-              {displaySpreadLevels.deviation != null && (
+              {spreadLevels.deviation != null && (
                 <span className={`font-semibold ml-auto ${
-                  displaySpreadLevels.deviation >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"
+                  spreadLevels.deviation >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"
                 }`}>
-                  {displaySpreadLevels.deviation >= 0 ? "+" : ""}{displaySpreadLevels.deviation.toFixed(4)}%
+                  {spreadLevels.deviation >= 0 ? "+" : ""}{spreadLevels.deviation.toFixed(4)}%
                 </span>
               )}
             </div>
           )}
 
-          <div className={`flex flex-col sm:flex-row gap-4 ${displaySpreadLevels ? "" : ""}`}>
-          <div className={`flex-1 min-w-0 min-h-[120px] ${displaySpreadLevels ? "h-32 sm:h-40" : "h-24 sm:h-28"}`}>
+          <div className={`flex flex-col sm:flex-row gap-4 ${spreadLevels ? "" : ""}`}>
+          <div className={`flex-1 min-w-0 min-h-[120px] ${spreadLevels ? "h-32 sm:h-40" : "h-24 sm:h-28"}`}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={displaySpreadHistory.map((d) => ({
+                data={spreadHistory.map((d) => ({
                   ...d,
                   vPos: d.v >= 0 ? d.v : null,
                   vNeg: d.v < 0 ? d.v : null,
@@ -720,18 +691,18 @@ function DashboardPageInner() {
                     (dataMin: number) => {
                       if (!isFinite(dataMin)) return -0.2;
                       let min = dataMin;
-                      if (displaySpreadLevels) {
-                        min = Math.min(min, displaySpreadLevels.entry);
-                        if (displaySpreadLevels.sl != null) min = Math.min(min, displaySpreadLevels.sl);
+                      if (spreadLevels) {
+                        min = Math.min(min, spreadLevels.entry);
+                        if (spreadLevels.sl != null) min = Math.min(min, spreadLevels.sl);
                       }
                       return min - 0.01;
                     },
                     (dataMax: number) => {
                       if (!isFinite(dataMax)) return 0.2;
                       let max = dataMax;
-                      if (displaySpreadLevels) {
-                        max = Math.max(max, displaySpreadLevels.entry);
-                        if (displaySpreadLevels.sl != null) max = Math.max(max, displaySpreadLevels.sl);
+                      if (spreadLevels) {
+                        max = Math.max(max, spreadLevels.entry);
+                        if (spreadLevels.sl != null) max = Math.max(max, spreadLevels.sl);
                       }
                       return max + 0.01;
                     },
@@ -744,7 +715,7 @@ function DashboardPageInner() {
                 <ReferenceLine y={0} stroke="var(--muted)" strokeWidth={0.5} strokeDasharray="2 2" />
                 <Area type="monotone" dataKey="vPos" stroke={positiveColor} strokeWidth={1.5} fill="url(#spreadGradPos)" isAnimationActive={false} connectNulls />
                 <Area type="monotone" dataKey="vNeg" stroke={negativeColor} strokeWidth={1.5} fill="url(#spreadGradNeg)" isAnimationActive={false} connectNulls baseValue={0} />
-                {displaySpreadLevels && (
+                {spreadLevels && (
                   <Customized
                     component={(props: { yAxisMap?: Record<string, { scale: (v: number) => number }>; offset?: { left: number; width: number; height: number } }) => {
                       const yAxis = props.yAxisMap && Object.values(props.yAxisMap)[0];
@@ -752,8 +723,8 @@ function DashboardPageInner() {
                       if (!yAxis?.scale || width <= 0) return null;
                       const scale = yAxis.scale;
                       const lines: Array<{ y: number; stroke: string; dash: string }> = [
-                        { y: displaySpreadLevels.entry, stroke: accentColor, dash: "6 3" },
-                        ...(displaySpreadLevels.sl != null ? [{ y: displaySpreadLevels.sl, stroke: negativeColor, dash: "4 4" }] : []),
+                        { y: spreadLevels.entry, stroke: accentColor, dash: "6 3" },
+                        ...(spreadLevels.sl != null ? [{ y: spreadLevels.sl, stroke: negativeColor, dash: "4 4" }] : []),
                       ];
                       return (
                         <g>
@@ -782,13 +753,13 @@ function DashboardPageInner() {
             </ResponsiveContainer>
           </div>
 
-          {displaySpreadLevels && tpPct != null && (
+          {spreadLevels && tpPct != null && (
             <div className="flex-1 min-w-0 min-h-[120px] h-32 sm:h-40 flex flex-col">
               <p className="text-xs text-[var(--muted)] mb-1">PnL Live</p>
               <div className="flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
-                    data={displayPnlHistory.map((d) => ({
+                    data={pnlHistory.map((d) => ({
                       ...d,
                       vPos: d.v >= 0 ? d.v : null,
                       vNeg: d.v < 0 ? d.v : null,
@@ -923,8 +894,8 @@ function DashboardPageInner() {
                     <span className="text-xs font-medium">LONG</span>
                   </div>
                   <p className="text-sm font-semibold mt-1">{ds?.long_basket || "—"}</p>
-                  <p className={`text-lg font-bold mt-1 ${dPnlLong >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                    {dPnlLong >= 0 ? "+" : ""}{dPnlLong.toFixed(3)}%
+                  <p className={`text-lg font-bold mt-1 ${pnlLong >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                    {pnlLong >= 0 ? "+" : ""}{pnlLong.toFixed(3)}%
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-[var(--negative)]/10 border border-[var(--negative)]/20">
@@ -933,48 +904,44 @@ function DashboardPageInner() {
                     <span className="text-xs font-medium">SHORT</span>
                   </div>
                   <p className="text-sm font-semibold mt-1">{ds?.short_basket || "—"}</p>
-                  <p className={`text-lg font-bold mt-1 ${dPnlShort >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                    {dPnlShort >= 0 ? "+" : ""}{dPnlShort.toFixed(3)}%
+                  <p className={`text-lg font-bold mt-1 ${pnlShort >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                    {pnlShort >= 0 ? "+" : ""}{pnlShort.toFixed(3)}%
                   </p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3 text-sm">
                 <div className="p-2 rounded bg-[var(--background)]/50">
                   <p className="text-xs text-[var(--muted)]">Entry spread</p>
-                  <p className="font-medium">{dEntrySpread != null ? `${dEntrySpread.toFixed(4)}%` : "—"}</p>
+                  <p className="font-medium">{entrySpread != null ? `${entrySpread.toFixed(4)}%` : "—"}</p>
                 </div>
                 <div className="p-2 rounded bg-[var(--background)]/50">
                   <p className="text-xs text-[var(--muted)]">DCA</p>
-                  <p className="font-medium">
-                    {fool
-                      ? -(Math.abs(ds?.dca_count_current ?? 0) + 9)
-                      : ds?.dca_count_current ?? 0}
-                  </p>
+                  <p className="font-medium">{ds?.dca_count_current ?? 0}</p>
                 </div>
                 <div className="p-2 rounded bg-[var(--background)]/50">
                   <p className="text-xs text-[var(--muted)]">Total PnL</p>
-                  <p className={`font-medium ${dPnl >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                    {dPnl >= 0 ? "+" : ""}{dPnl.toFixed(3)}%
-                    {dPnlUsdt != null && (
-                      <span className={`block text-xs mt-0.5 ${dPnlUsdt >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                        {dPnlUsdt >= 0 ? "+" : ""}${dPnlUsdt.toFixed(2)}
+                  <p className={`font-medium ${pnl >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                    {pnl >= 0 ? "+" : ""}{pnl.toFixed(3)}%
+                    {pnlUsdt != null && (
+                      <span className={`block text-xs mt-0.5 ${pnlUsdt >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                        {pnlUsdt >= 0 ? "+" : ""}${pnlUsdt.toFixed(2)}
                       </span>
                     )}
-                    {displayPositionsBreakdown && displayPositionsBreakdown.totalCommission !== 0 && (
+                    {positionsBreakdown && positionsBreakdown.totalCommission !== 0 && (
                       <span className="block text-xs mt-0.5 text-[var(--muted)]">
-                        Fee: {displayPositionsBreakdown.totalCommission >= 0 ? "+" : ""}${displayPositionsBreakdown.totalCommission.toFixed(2)}
+                        Fee: {positionsBreakdown.totalCommission >= 0 ? "+" : ""}${positionsBreakdown.totalCommission.toFixed(2)}
                       </span>
                     )}
                   </p>
                 </div>
               </div>
-              {displayPositionsBreakdown && (
+              {positionsBreakdown && (
                 <div className="mt-3 pt-3 border-t border-[var(--card-border)]">
                   <p className="text-xs text-[var(--muted)] mb-2">Position breakdown (PnL USDT)</p>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 max-h-44 overflow-y-auto">
                     <div>
                       <p className="text-xs font-medium text-[var(--positive)] mb-1">LONG</p>
-                      {displayPositionsBreakdown.longItems.map((item) => (
+                      {positionsBreakdown.longItems.map((item) => (
                         <div key={item.instId} className="flex items-center justify-between py-1 px-2 rounded bg-[var(--positive)]/5 text-sm">
                           <span className="flex items-center gap-2">
                             <CryptoIcon symbol={item.instId} size={18} />
@@ -988,7 +955,7 @@ function DashboardPageInner() {
                     </div>
                     <div>
                       <p className="text-xs font-medium text-[var(--negative)] mb-1">SHORT</p>
-                      {displayPositionsBreakdown.shortItems.map((item) => (
+                      {positionsBreakdown.shortItems.map((item) => (
                         <div key={item.instId} className="flex items-center justify-between py-1 px-2 rounded bg-[var(--negative)]/5 text-sm">
                           <span className="flex items-center gap-2">
                             <CryptoIcon symbol={item.instId} size={18} />
@@ -1002,18 +969,18 @@ function DashboardPageInner() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--card-border)]/50 text-sm">
-                    <span className="text-[var(--muted)]">LONG: <span className={`font-medium ${displayPositionsBreakdown.longTotal >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>{displayPositionsBreakdown.longTotal >= 0 ? "+" : ""}${displayPositionsBreakdown.longTotal.toFixed(2)}</span></span>
-                    <span className="text-[var(--muted)]">SHORT: <span className={`font-medium ${displayPositionsBreakdown.shortTotal >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>{displayPositionsBreakdown.shortTotal >= 0 ? "+" : ""}${displayPositionsBreakdown.shortTotal.toFixed(2)}</span></span>
+                    <span className="text-[var(--muted)]">LONG: <span className={`font-medium ${positionsBreakdown.longTotal >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>{positionsBreakdown.longTotal >= 0 ? "+" : ""}${positionsBreakdown.longTotal.toFixed(2)}</span></span>
+                    <span className="text-[var(--muted)]">SHORT: <span className={`font-medium ${positionsBreakdown.shortTotal >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>{positionsBreakdown.shortTotal >= 0 ? "+" : ""}${positionsBreakdown.shortTotal.toFixed(2)}</span></span>
                   </div>
-                  {displayPositionsBreakdown.totalCommission !== 0 && (
+                  {positionsBreakdown.totalCommission !== 0 && (
                     <div className="mt-1 text-sm text-[var(--muted)] text-right">
-                      Fee: {displayPositionsBreakdown.totalCommission >= 0 ? "+" : ""}${displayPositionsBreakdown.totalCommission.toFixed(2)}
+                      Fee: {positionsBreakdown.totalCommission >= 0 ? "+" : ""}${positionsBreakdown.totalCommission.toFixed(2)}
                     </div>
                   )}
                   <div className="mt-1 text-sm font-semibold text-right">
                     <span className="text-[var(--muted)]">Total: </span>
-                    <span className={dPnlUsdt != null && dPnlUsdt >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}>
-                      {dPnlUsdt != null ? `${dPnlUsdt >= 0 ? "+" : ""}$${dPnlUsdt.toFixed(2)}` : "—"}
+                    <span className={pnlUsdt != null && pnlUsdt >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}>
+                      {pnlUsdt != null ? `${pnlUsdt >= 0 ? "+" : ""}$${pnlUsdt.toFixed(2)}` : "—"}
                     </span>
                   </div>
                 </div>
@@ -1039,9 +1006,9 @@ function DashboardPageInner() {
         {/* Instruments & Live positions (combined) */}
         <motion.div {...anim(0.2)} className="card-glass p-4 md:p-6 min-w-0 overflow-hidden flex flex-col gap-3">
           <h2 className="text-sm font-medium text-[var(--muted)] mb-1">Instruments & live positions</h2>
-          {displayLivePositions && displayLivePositions.length > 0 ? (
+          {livePositions && livePositions.length > 0 ? (
             <div className="space-y-2 overflow-x-hidden">
-              {[...displayLivePositions]
+              {[...livePositions]
                 .sort((a, b) => (a.side === "long" ? 0 : 1) - (b.side === "long" ? 0 : 1))
                 .map((p) => {
                 const shortName = p.instId.replace("-USDT-SWAP", "");
@@ -1076,9 +1043,6 @@ function DashboardPageInner() {
                   if (ratio != null) {
                     ratio = Math.max(0, Math.min(1, ratio));
                   }
-                }
-                if (fool && hasLiq) {
-                  ratio = jokeLiquidationBarRatio(p.instId);
                 }
                 const safeColor = isLong ? positiveColor : negativeColor;
                 const dangerColor = isLong ? negativeColor : positiveColor;
@@ -1157,12 +1121,12 @@ function DashboardPageInner() {
                 <TrendingUp className="w-4 h-4" />
                 <span className="text-xs">Win rate</span>
               </div>
-              <p className="text-xl font-semibold mt-1">{sumWinrate != null ? `${sumWinrate.toFixed(1)}%` : "—"}</p>
+              <p className="text-xl font-semibold mt-1">{summary?.winrate_pct != null ? `${summary.winrate_pct.toFixed(1)}%` : "—"}</p>
             </div>
             <div className="p-4 rounded-lg bg-[var(--background)]/50">
               <span className="text-xs text-[var(--muted)]">PnL %</span>
-              <p className={`text-xl font-semibold mt-1 ${(sumPnlPct ?? 0) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                {sumPnlPct != null ? `${sumPnlPct >= 0 ? "+" : ""}${sumPnlPct.toFixed(2)}%` : "—"}
+              <p className={`text-xl font-semibold mt-1 ${(summary?.pnl_total_pct ?? 0) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                {summary?.pnl_total_pct != null ? `${summary.pnl_total_pct >= 0 ? "+" : ""}${summary.pnl_total_pct.toFixed(2)}%` : "—"}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-[var(--background)]/50">
@@ -1170,8 +1134,8 @@ function DashboardPageInner() {
                 <Wallet className="w-4 h-4" />
                 <span className="text-xs">PnL USDT</span>
               </div>
-              <p className={`text-xl font-semibold mt-1 ${(sumPnlUsdt ?? 0) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                {sumPnlUsdt != null ? `${sumPnlUsdt >= 0 ? "+" : ""}$${sumPnlUsdt.toFixed(2)}` : "—"}
+              <p className={`text-xl font-semibold mt-1 ${(summary?.pnl_total_usdt ?? 0) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                {summary?.pnl_total_usdt != null ? `${summary.pnl_total_usdt >= 0 ? "+" : ""}$${summary.pnl_total_usdt.toFixed(2)}` : "—"}
               </p>
             </div>
           </div>
@@ -1307,30 +1271,13 @@ function DashboardPageInner() {
                         <td className="py-3 pr-4 text-xs">{fmtDate(t.opened_at)}</td>
                         <td className="py-3 pr-4 text-xs">{fmtDate(t.closed_at)}</td>
                         <td className="py-3 pr-4 text-xs">{fmtDuration(t.duration_sec)}</td>
-                        <td className="py-3 pr-4">
-                          {(fool ? jokeSpreadPct(Number(t.entry_spread_pct)) : Number(t.entry_spread_pct)).toFixed(3)}
+                        <td className="py-3 pr-4">{Number(t.entry_spread_pct).toFixed(3)}</td>
+                        <td className="py-3 pr-4">{Number(t.exit_spread_pct).toFixed(3)}</td>
+                        <td className={`py-3 pr-4 font-medium ${Number(t.pnl_pct) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                          {Number(t.pnl_pct) >= 0 ? "+" : ""}{Number(t.pnl_pct).toFixed(2)}%
                         </td>
-                        <td className="py-3 pr-4">
-                          {(fool ? jokeSpreadPct(Number(t.exit_spread_pct)) : Number(t.exit_spread_pct)).toFixed(3)}
-                        </td>
-                        <td
-                          className={`py-3 pr-4 font-medium ${
-                            (fool ? jokePct(Number(t.pnl_pct)) : Number(t.pnl_pct)) >= 0
-                              ? "text-[var(--positive)]"
-                              : "text-[var(--negative)]"
-                          }`}
-                        >
-                          {(fool ? jokePct(Number(t.pnl_pct)) : Number(t.pnl_pct)) >= 0 ? "+" : ""}
-                          {(fool ? jokePct(Number(t.pnl_pct)) : Number(t.pnl_pct)).toFixed(2)}%
-                        </td>
-                        <td
-                          className={`py-3 pr-4 ${
-                            (fool ? jokeUsdt(Number(t.pnl_usdt)) : Number(t.pnl_usdt)) >= 0
-                              ? "text-[var(--positive)]"
-                              : "text-[var(--negative)]"
-                          }`}
-                        >
-                          ${(fool ? jokeUsdt(Number(t.pnl_usdt)) : Number(t.pnl_usdt)).toFixed(2)}
+                        <td className={`py-3 pr-4 ${Number(t.pnl_usdt) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                          ${Number(t.pnl_usdt).toFixed(2)}
                         </td>
                         <td className="py-3 text-xs text-[var(--muted)]">{t.reason || "—"}</td>
                       </tr>
@@ -1339,7 +1286,7 @@ function DashboardPageInner() {
                           <tr key={`${t.id}-detail`} className="border-none">
                             <td colSpan={9} className="p-0 bg-[var(--card-border)]/10 align-top">
                               <TradeDetailExpandable
-                                pairsDetail={fool && t.pairs_detail ? jokePairsDetail(t.pairs_detail) : t.pairs_detail!}
+                                pairsDetail={t.pairs_detail}
                                 longBasket={t.long_basket}
                                 shortBasket={t.short_basket}
                               />

@@ -10,7 +10,6 @@ import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { MobileDrawer } from "./MobileDrawer";
 import { SubscriptionModal } from "./SubscriptionModal";
-import { AprilFoolsModal } from "./AprilFoolsModal";
 import { AlertTriangle, Zap } from "lucide-react";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -69,10 +68,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </button>
             </div>
           ) : (
-            <>
-              <AprilFoolsModal />
-              {children}
-            </>
+            children
           )}
         </main>
         <BottomNav />

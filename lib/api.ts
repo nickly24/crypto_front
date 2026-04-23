@@ -1,5 +1,4 @@
-const API_URL = "https://nickly24-crypto-back-5acf.twc1.net/";
-//const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -127,6 +126,10 @@ export async function botClosePosition() {
     position_closed: boolean;
     trade?: { id: number; pnl_pct: number; reason: string };
   }>("/api/bot/close-position", { method: "POST" });
+}
+
+export async function botResetSpread() {
+  return api<{ status: string; current_spread_pct: number }>("/api/bot/spread/reset", { method: "POST" });
 }
 
 export async function botLogs(limit = 50) {

@@ -5,7 +5,6 @@ import { createChart, IChartApi, LineSeries, LineData } from "lightweight-charts
 import { getChartSpread, botStatus } from "@/lib/api";
 import { useTheme } from "@/providers/theme";
 import { utcMsToLocalChartTime, utcToLocalChartTime } from "@/lib/chart-time";
-import { isAprilFoolsActive, jokeSpreadPct } from "@/lib/april-fools";
 
 const LIVE_WINDOW_MS = 10 * 60 * 1000; // 10 минут
 const POLL_MS = 1000;
@@ -65,13 +64,12 @@ export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: numbe
       const now = Date.now();
       const cutoff = now - LIVE_WINDOW_MS;
       type WithRealMs = LineData & { _realMs?: number };
-      const fool = isAprilFoolsActive();
       const past = r.data.points
         .map((p) => {
           const realMs = new Date(p.ts).getTime();
           return {
             time: utcMsToLocalChartTime(realMs) as LineData["time"],
-            value: fool ? jokeSpreadPct(p.spread_pct) : p.spread_pct,
+            value: p.spread_pct,
             _realMs: realMs,
           };
         })
@@ -104,10 +102,7 @@ export function SpreadLiveMini({ spreadLevels }: { spreadLevels?: { entry: numbe
       botStatus().then((r) => {
         if (!r.ok || !r.data) return;
         const sp = (r.data as { db_state?: { current_spread_pct?: number | string | null } })?.db_state?.current_spread_pct;
-        if (sp != null) {
-          const v = num(sp);
-          addLivePoint(isAprilFoolsActive() ? jokeSpreadPct(v) : v);
-        }
+        if (sp != null) addLivePoint(num(sp));
       });
     }, POLL_MS);
     return () => clearInterval(id);
