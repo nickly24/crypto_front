@@ -1,373 +1,267 @@
 "use client";
 
-import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Zap,
-  Shield,
-  TrendingUp,
-  BarChart3,
-  Calculator,
   ArrowUpRight,
-  Check,
-  X,
+  Bot,
+  Gauge,
+  Layers3,
+  LineChart,
+  LockKeyhole,
+  Radio,
+  ShieldCheck,
+  Split,
+  Zap,
 } from "lucide-react";
-import Link from "next/link";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
 
-const features = [
+const pillars = [
   {
-    icon: Zap,
-    title: "Fast entry",
-    desc: "The bot reacts to spread in real time and opens positions per your rules.",
+    icon: Split,
+    title: "Spread-first logic",
+    desc: "Signals are built around divergence between baskets, not a one-sided market bet.",
   },
   {
-    icon: Shield,
-    title: "Capital protection",
-    desc: "Take profit, stop loss and DCA — configurable risk limits.",
+    icon: ShieldCheck,
+    title: "Risk before entry",
+    desc: "Take profit, stop loss, DCA, leverage, and allocation are visible before the bot opens exposure.",
   },
   {
-    icon: TrendingUp,
-    title: "Analytics",
-    desc: "Statistics, trade history and PnL in a clear dashboard.",
+    icon: Radio,
+    title: "Live execution state",
+    desc: "Track entries, hedge checks, open legs, and closure reasons without digging through exchange screens.",
   },
 ];
 
-const chartData = [
-  { m: "Month 1", pnl: 2 },
-  { m: "Month 2", pnl: 5 },
-  { m: "Month 3", pnl: 9 },
-  { m: "Month 4", pnl: 14 },
-  { m: "Month 5", pnl: 20 },
-  { m: "Month 6", pnl: 28 },
+const systemCards = [
+  { icon: Layers3, title: "Basket builder", value: "Long / short sets", detail: "Pair groups, weights, thresholds" },
+  { icon: Gauge, title: "Signal engine", value: "Spread + z-score", detail: "Entry, exit, and reset conditions" },
+  { icon: Bot, title: "Bot control", value: "Start / pause / close", detail: "One panel for runtime actions" },
+  { icon: LineChart, title: "Analytics", value: "PnL history", detail: "Trades, win rate, exposure, timing" },
 ];
 
-const steps = [
-  { n: "01", title: "Connect OKX API", desc: "Link your account with secure API keys." },
-  { n: "02", title: "Configure baskets", desc: "Set thresholds, pairs and risk per your plan." },
-  { n: "03", title: "Start the bot", desc: "Launch automation with one click." },
-  { n: "04", title: "Track results", desc: "Review PnL and history in the dashboard." },
+const workflow = [
+  "Connect an OKX API key with the permissions you choose.",
+  "Build baskets and set the exact spread threshold.",
+  "Define position size, leverage, take profit, and stop loss.",
+  "Launch the bot and watch execution, risk, and PnL in real time.",
 ];
 
 export function LandingContent() {
-  const [deposit, setDeposit] = useState(5000);
-  const [monthlyPct, setMonthlyPct] = useState(3);
-  const months = 12;
-  const projected = Array.from({ length: months }, (_, i) => {
-    const val = deposit * Math.pow(1 + monthlyPct / 100, i + 1);
-    return { m: `${i + 1}`, val: Math.round(val) };
-  });
-
-  const shell = "max-w-6xl mx-auto px-5 sm:px-6";
+  const shell = "mx-auto max-w-7xl px-5 sm:px-6 lg:px-10";
 
   return (
-    <div className="space-y-20 sm:space-y-28 pb-24 sm:pb-32">
-      {/* Features */}
-      <section className={shell}>
+    <div className="pb-24 sm:pb-32">
+      <section className={`${shell} py-14 sm:py-18 lg:py-16`}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12 sm:mb-16"
+          className="mb-10 max-w-3xl"
         >
-          <p className="text-sm font-medium text-[var(--accent)] tracking-wide uppercase mb-2">Why us</p>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            Why <span className="text-[var(--accent)]">PairTrading</span>?
+          <p className="mb-3 text-sm font-semibold uppercase text-[var(--accent)]">Execution stack</p>
+          <h2 className="text-3xl font-semibold leading-tight tracking-normal text-[var(--foreground)] sm:text-4xl">
+            A trading desk for spreads, not another generic chart page.
           </h2>
-          <p className="text-[var(--muted)] mt-3 max-w-lg mx-auto text-sm sm:text-base">
-            Built for spread traders who want execution without babysitting the chart.
+          <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted)]">
+            PairTrading brings the pieces that matter into one controlled interface: baskets, live spread behavior,
+            execution state, and portfolio risk.
           </p>
         </motion.div>
-        <div className="grid md:grid-cols-3 gap-5 sm:gap-6">
-          {features.map(({ icon: Icon, title, desc }, i) => (
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {pillars.map(({ icon: Icon, title, desc }, i) => (
             <motion.div
               key={title}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 18 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-              className="group relative rounded-2xl border border-[var(--card-border)] bg-gradient-to-b from-[var(--card-bg)] to-[var(--card-bg)]/40 p-6 sm:p-8 shadow-[var(--shadow-sm)] hover:border-[var(--accent)]/35 hover:shadow-[var(--shadow-md)] transition-all"
-            >
-              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity bg-[radial-gradient(600px_200px_at_50%_0%,rgba(157,219,0,0.06),transparent)] pointer-events-none" />
-              <div className="relative">
-                <div className="w-12 h-12 rounded-xl bg-[var(--accent)]/15 flex items-center justify-center mb-5 ring-1 ring-[var(--accent)]/20">
-                  <Icon className="w-6 h-6 text-[var(--accent)]" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{title}</h3>
-                <p className="text-[var(--muted)] text-sm leading-relaxed">{desc}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Calculator */}
-      <section className={shell}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="rounded-3xl border border-[var(--card-border)] bg-gradient-to-br from-[var(--card-bg)] via-[var(--card-bg)] to-[var(--background)] p-6 sm:p-10 overflow-hidden shadow-[var(--shadow-md)]"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Calculator className="w-6 h-6 text-[var(--accent)]" />
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">How much can you earn?</h2>
-              </div>
-              <p className="text-[var(--muted)] text-sm max-w-xl">
-                Approximate calculation with reinvestment. Results depend on settings and market conditions.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-10">
-            <div className="space-y-8">
-              <div>
-                <label className="text-sm font-medium text-[var(--muted)]">Deposit (USDT)</label>
-                <input
-                  type="range"
-                  min={1000}
-                  max={50000}
-                  step={1000}
-                  value={deposit}
-                  onChange={(e) => setDeposit(Number(e.target.value))}
-                  className="w-full mt-3 h-2 rounded-full appearance-none cursor-pointer accent-[var(--accent)] bg-[var(--sidebar-hover)]"
-                />
-                <div className="flex justify-between mt-2 text-xs text-[var(--muted)]">
-                  <span>$1k</span>
-                  <span className="text-lg font-bold text-[var(--foreground)]">${deposit.toLocaleString()}</span>
-                  <span>$50k</span>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-[var(--muted)]">Avg monthly return (%)</label>
-                <input
-                  type="range"
-                  min={1}
-                  max={8}
-                  step={0.5}
-                  value={monthlyPct}
-                  onChange={(e) => setMonthlyPct(Number(e.target.value))}
-                  className="w-full mt-3 h-2 rounded-full appearance-none cursor-pointer accent-[var(--accent)] bg-[var(--sidebar-hover)]"
-                />
-                <div className="flex justify-between mt-2 text-xs text-[var(--muted)]">
-                  <span>1%</span>
-                  <span className="text-lg font-bold text-[var(--foreground)]">{monthlyPct}%</span>
-                  <span>8%</span>
-                </div>
-              </div>
-              <div className="rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent)]/8 p-5">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-[var(--muted)]">After 12 months</span>
-                  <span className="text-2xl font-bold text-[var(--accent)] tabular-nums">
-                    ${projected[11]?.val.toLocaleString() ?? 0}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="h-56 sm:h-64 lg:h-auto lg:min-h-[280px] rounded-2xl border border-[var(--card-border)] bg-[var(--background)]/50 p-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={projected}>
-                  <defs>
-                    <linearGradient id="areaCalcGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#9ddb00" stopOpacity={0.45} />
-                      <stop offset="100%" stopColor="#9ddb00" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="var(--card-border)" strokeDasharray="4 4" vertical={false} />
-                  <XAxis dataKey="m" tick={{ fill: "var(--muted)", fontSize: 11 }} />
-                  <YAxis
-                    tick={{ fill: "var(--muted)", fontSize: 11 }}
-                    tickFormatter={(v) => `$${v / 1000}k`}
-                  />
-                  <Tooltip
-                    formatter={(v: number) => [`$${v.toLocaleString()}`, "Balance"]}
-                    contentStyle={{
-                      background: "var(--card-bg)",
-                      border: "1px solid var(--card-border)",
-                      borderRadius: 12,
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="val"
-                    stroke="#9ddb00"
-                    strokeWidth={2}
-                    fill="url(#areaCalcGrad)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Growth chart */}
-      <section className={shell}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="rounded-3xl border border-[var(--card-border)] bg-[var(--card-bg)]/80 backdrop-blur-sm p-6 sm:p-10"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <BarChart3 className="w-6 h-6 text-[var(--accent)]" />
-            <h2 className="text-2xl sm:text-3xl font-bold">Example portfolio growth</h2>
-          </div>
-          <p className="text-[var(--muted)] text-sm mb-8 max-w-2xl">
-            Sample accumulation curve with a conservative strategy (~0.5% avg PnL per trade, 2–3 trades per week).
-          </p>
-          <div className="h-56 sm:h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#9ddb00" stopOpacity={0.5} />
-                    <stop offset="50%" stopColor="#9ddb00" stopOpacity={0.15} />
-                    <stop offset="100%" stopColor="#9ddb00" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="var(--card-border)" strokeDasharray="4 4" vertical={false} />
-                <XAxis dataKey="m" tick={{ fill: "var(--muted)", fontSize: 11 }} />
-                <YAxis tick={{ fill: "var(--muted)", fontSize: 11 }} tickFormatter={(v) => `+${v}%`} />
-                <Tooltip
-                  formatter={(v: number) => [`+${v}%`, "Accumulated PnL"]}
-                  contentStyle={{
-                    background: "var(--card-bg)",
-                    border: "1px solid var(--card-border)",
-                    borderRadius: 12,
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="pnl"
-                  stroke="#9ddb00"
-                  strokeWidth={2.5}
-                  fill="url(#growthGrad)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Steps */}
-      <section className={shell}>
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-3xl font-bold text-center mb-4"
-        >
-          Launch in four steps
-        </motion.h2>
-        <p className="text-center text-[var(--muted)] text-sm mb-12 max-w-md mx-auto">
-          From API keys to live trades — a straight path.
-        </p>
-        <div className="max-w-3xl mx-auto space-y-0">
-          {steps.map((step, i) => (
-            <motion.div
-              key={step.n}
-              initial={{ opacity: 0, x: -16 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
               transition={{ delay: i * 0.06 }}
-              className="flex gap-5 sm:gap-8"
+              className="rounded-lg border border-[var(--card-border)] bg-[linear-gradient(180deg,rgba(40,44,43,0.9),rgba(31,35,34,0.82))] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
             >
-              <div className="flex flex-col items-center">
-                <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/12 border border-[var(--accent)]/30 flex items-center justify-center shrink-0">
-                  <span className="text-lg font-bold text-[var(--accent)]">
-                    {step.n}
-                  </span>
-                </div>
-                {i < steps.length - 1 && (
-                  <div className="w-px flex-1 min-h-[2rem] bg-gradient-to-b from-[var(--accent)]/35 to-transparent my-2" />
-                )}
+              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--accent)]/18 bg-[var(--accent)]/8">
+                <Icon className="h-5 w-5 text-[var(--accent)]" />
               </div>
-              <div className={`pb-10 ${i === steps.length - 1 ? "pb-0" : ""}`}>
-                <h3 className="text-lg font-semibold mb-1">{step.title}</h3>
-                <p className="text-[var(--muted)] text-sm leading-relaxed">{step.desc}</p>
-              </div>
+              <h3 className="mb-2 text-lg font-semibold text-[var(--foreground)]">{title}</h3>
+              <p className="text-sm leading-6 text-[var(--muted)]">{desc}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* Comparison */}
-      <section className={shell}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="grid md:grid-cols-2 gap-5 sm:gap-6"
-        >
-          <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card-bg)]/50 p-6 sm:p-8">
-            <h3 className="text-lg font-semibold mb-5 text-[var(--muted)]">Manual trading</h3>
-            <ul className="space-y-3 text-sm text-[var(--muted)]">
-              {["Need to watch 24/7", "Emotions affect decisions", "Easy to miss entries", "Hard to scale"].map((s) => (
-                <li key={s} className="flex items-start gap-3">
-                  <X className="w-4 h-4 text-[var(--negative)] shrink-0 mt-0.5" />
-                  {s}
-                </li>
-              ))}
-            </ul>
+      <section className="py-14 sm:py-18 lg:py-14">
+        <div className={`${shell}`}>
+          <div className="rounded-[24px] border border-[var(--accent)]/40 bg-[var(--accent)] p-5 text-slate-950 shadow-[0_30px_90px_rgba(0,0,0,0.18)] sm:p-7 lg:p-8">
+            <div className="mb-8 flex flex-col gap-4 lg:mb-10 lg:flex-row lg:items-end lg:justify-between">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="max-w-2xl"
+              >
+                <p className="mb-3 text-sm font-semibold uppercase text-slate-900/70">Built for operators</p>
+                <h2 className="text-3xl font-semibold leading-tight tracking-normal text-slate-950 sm:text-4xl">
+                  Less noise. More control at the exact moment of execution.
+                </h2>
+                <p className="mt-4 max-w-xl text-base leading-7 text-slate-900/72">
+                  The value is disciplined automation, clear risk, and fast visibility when the spread reaches your
+                  rules.
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="lg:self-start"
+              >
+                <Link
+                  href="/guide"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/70 bg-white px-5 text-sm font-semibold text-slate-950 shadow-[0_10px_24px_rgba(15,23,42,0.08)] transition hover:bg-slate-100"
+                >
+                  See setup flow
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </motion.div>
+            </div>
+
+            <div className="grid gap-8 lg:grid-cols-[1.12fr_0.88fr] lg:items-start">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="grid gap-4 sm:grid-cols-2"
+              >
+                {systemCards.map(({ icon: Icon, title, value, detail }) => (
+                  <div
+                    key={title}
+                    className="rounded-xl border border-black/8 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.08)]"
+                  >
+                    <div className="mb-6 flex items-center justify-between gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--accent)]/22 bg-[var(--accent)]/12">
+                        <Icon className="h-5 w-5 text-[var(--accent)]" />
+                      </div>
+                      <span className="rounded-md border border-slate-900/10 bg-slate-100 px-2 py-1 text-xs text-slate-500">
+                        Live
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-medium text-slate-500">{title}</h3>
+                    <p className="mt-2 text-xl font-semibold text-slate-950">{value}</p>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">{detail}</p>
+                  </div>
+                ))}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="rounded-xl border border-black/8 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.08)] sm:p-6"
+              >
+                <div className="mb-5 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--accent)]/22 bg-[var(--accent)]/12">
+                  <Gauge className="h-5 w-5 text-[var(--accent)]" />
+                </div>
+                <h3 className="text-xl font-semibold text-slate-950">One operator surface for the full run.</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-700">
+                  Basket structure, signal quality, control actions, and analytics sit in one visual rhythm instead of
+                  being split across exchange tabs and notes.
+                </p>
+                <div className="mt-6 space-y-3">
+                  {[
+                    "Structure your long / short baskets before entry.",
+                    "See runtime controls without leaving the panel.",
+                    "Read analytics in the same visual system as execution.",
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      className="rounded-lg border border-slate-950/8 bg-white/78 px-4 py-3 text-sm leading-6 text-slate-800"
+                    >
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
           </div>
-          <div className="rounded-2xl border border-[var(--accent)]/35 bg-gradient-to-br from-[var(--accent)]/10 to-transparent p-6 sm:p-8 shadow-[inset_0_0_0_1px_rgba(157,219,0,0.2)]">
-            <h3 className="text-lg font-semibold mb-5 text-[var(--accent)]">PairTrading bot</h3>
-            <ul className="space-y-3 text-sm">
-              {["Runs automatically", "Clear rules, no emotions", "Never misses signals", "10 pairs at once"].map((s) => (
-                <li key={s} className="flex items-start gap-3">
-                  <Check className="w-4 h-4 text-[var(--positive)] shrink-0 mt-0.5" />
-                  {s}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </motion.div>
+        </div>
       </section>
 
-      {/* CTA */}
-      <section className={shell}>
+      <section className="border-y border-[var(--card-border)] bg-[var(--card-bg)]/35 py-14 sm:py-18 lg:py-14">
+        <div className={`${shell} grid items-center gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-start`}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98, y: 18 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative mx-auto w-full max-w-[18rem] sm:max-w-[20rem] lg:max-w-[21rem]"
+          >
+            <div className="absolute inset-10 bg-[var(--accent)]/12 blur-3xl" />
+            <Image
+              src="/landing/mobile-bot-mockup-cutout.png"
+              alt="Mobile bot control screen with pair list, risk mode, and compact PnL cards"
+              width={854}
+              height={1842}
+              className="relative w-full object-contain drop-shadow-[0_34px_80px_rgba(0,0,0,0.45)]"
+            />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 22 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="max-w-2xl lg:pt-6"
+          >
+            <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--accent)]/25 bg-[var(--accent)]/12 text-[var(--accent)]">
+              <Zap className="h-5 w-5" />
+            </div>
+            <h2 className="text-3xl font-semibold leading-tight tracking-normal text-[var(--foreground)] sm:text-4xl">
+              Start simple. Scale into a full pair-trading cockpit.
+            </h2>
+            <div className="mt-8 space-y-4">
+              {workflow.map((item, i) => (
+                <div key={item} className="flex gap-4">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--accent)]/25 bg-[var(--accent)]/10 text-sm font-semibold text-[var(--accent)]">
+                    {String(i + 1).padStart(2, "0")}
+                  </div>
+                  <p className="pt-1 text-base leading-7 text-[var(--muted)]">{item}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      <section className={`${shell} py-14 sm:py-18 lg:py-16`}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative overflow-hidden rounded-3xl border border-[var(--accent)]/30 bg-gradient-to-b from-[var(--accent)]/12 to-transparent px-6 py-12 sm:px-12 sm:py-16 text-center"
+          className="grid gap-8 rounded-lg border border-[var(--accent)]/25 bg-[#171a19] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.24)] sm:p-10 lg:grid-cols-[1fr_auto] lg:items-center"
         >
-          <div
-            className="pointer-events-none absolute inset-0 opacity-70"
-            style={{
-              background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(157, 219, 0, 0.15), transparent 55%)",
-            }}
-          />
-          <div className="relative">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-2">Ready to start?</h2>
-            <p className="text-[var(--muted)] text-sm sm:text-base mb-8 max-w-md mx-auto">
-              Connect OKX and start the bot in minutes.
+          <div>
+            <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-[var(--accent)] text-slate-950">
+              <LockKeyhole className="h-5 w-5" />
+            </div>
+            <h2 className="text-3xl font-semibold leading-tight tracking-normal text-white sm:text-4xl">
+              Ready when your strategy is ready.
+            </h2>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-400">
+              Connect API access, keep your rules explicit, and use the panel as the command center for automated
+              spread trading.
             </p>
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[var(--accent)] text-slate-900 font-semibold hover:brightness-105 transition shadow-lg shadow-[var(--accent)]/25"
-            >
-              Sign in to panel
-              <ArrowUpRight className="w-4 h-4" />
-            </Link>
           </div>
+          <Link
+            href="/login"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-6 text-sm font-semibold text-slate-950 transition hover:brightness-105"
+          >
+            Sign in to panel
+            <ArrowUpRight className="h-4 w-4" />
+          </Link>
         </motion.div>
       </section>
 
-      <footer className={`${shell} pt-4 border-t border-[var(--card-border)]`}>
-        <p className="text-center text-xs text-[var(--muted)]">
+      <footer className={`${shell} border-t border-[var(--card-border)] pt-6`}>
+        <p className="text-center text-xs leading-6 text-[var(--muted)]">
           © {new Date().getFullYear()} PairTrading. Spread trading involves risk.
         </p>
       </footer>
