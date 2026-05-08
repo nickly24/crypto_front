@@ -1,5 +1,7 @@
 /** Базовый URL бэкенда (без завершающего /). */
-export const API_URL = "https://nickly24-crypto-back-258e.twc1.net";
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
+  "https://nickly24-crypto-back-258e.twc1.net";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -40,6 +42,20 @@ export async function login(email: string, password: string) {
       body: JSON.stringify({ email, password }),
     }
   );
+}
+
+export async function loginWithGoogleCredential(credential: string) {
+  return api<{ access_token: string; user: { id: number; email: string; role: string } & SubscriptionData }>(
+    "/api/auth/google",
+    {
+      method: "POST",
+      body: JSON.stringify({ credential }),
+    }
+  );
+}
+
+export async function getTelegramAuthUrl(next = "/dashboard") {
+  return api<{ auth_url: string }>(`/api/auth/telegram/start?next=${encodeURIComponent(next)}`);
 }
 
 export type SubscriptionData = {

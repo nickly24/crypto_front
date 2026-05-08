@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth";
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 
 export default function LoginPage() {
   const { user, loading, login } = useAuth();
@@ -76,6 +78,15 @@ export default function LoginPage() {
             {submitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
+        <div className="mt-6">
+          <SocialAuthButtons mode="login" />
+        </div>
+        <p className="mt-6 text-sm text-[var(--muted)] text-center">
+          New here?{" "}
+          <Link href="/register" className="text-[var(--accent)] hover:underline">
+            Create account
+          </Link>
+        </p>
       </motion.div>
     </div>
   );

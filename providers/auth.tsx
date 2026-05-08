@@ -45,6 +45,7 @@ const AuthContext = createContext<{
   switchingAccount: boolean;
   accounts: StoredAccount[];
   login: (email: string, password: string, addAccount?: boolean) => Promise<{ ok: boolean; error?: string }>;
+  loginWithAccessToken: (token: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
   switchAccount: (account: StoredAccount) => void;
   logoutAccount: (account: StoredAccount) => void;
@@ -55,6 +56,7 @@ const AuthContext = createContext<{
   switchingAccount: false,
   accounts: [],
   login: async () => ({ ok: false }),
+  loginWithAccessToken: async () => ({ ok: false }),
   logout: () => {},
   switchAccount: () => {},
   logoutAccount: () => {},
@@ -82,10 +84,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentEmail(acc.email);
   }, []);
 
+  const storeAccount = useCallback((acc: StoredAccount) => {
+    const accs = loadAccounts();
+    const exists = accs.some((a) => a.email === acc.email);
+    const next = exists ? accs.map((a) => (a.email === acc.email ? acc : a)) : [...accs, acc];
+    saveAccounts(next);
+    setAccounts(next);
+    applyAccount(acc);
+  }, [applyAccount]);
+
   useEffect(() => {
     let cancelled = false;
     const accs = loadAccounts();
-    setAccounts(accs);
     const currentEmail = getCurrentEmail();
     const current = accs.find((a) => a.email === currentEmail) ?? accs[0];
     if (current) {
@@ -127,24 +137,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       });
       return () => { cancelled = true; };
-    } else setLoading(false);
+    } else {
+      queueMicrotask(() => {
+        if (!cancelled) setLoading(false);
+      });
+    }
   }, [applyAccount]);
 
+  const loginWithAccessToken = useCallback(async (token: string) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("access_token", token);
+    }
+    const r = await me();
+    if (!r.ok || !r.data) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("access_token");
+      }
+      return { ok: false, error: r.error || "Login failed" };
+    }
+    const newAcc: StoredAccount = {
+      email: r.data.email,
+      token,
+      user: r.data,
+    };
+    storeAccount(newAcc);
+    return { ok: true };
+  }, [storeAccount]);
+
   const login = async (email: string, password: string, addAccount = false) => {
+    void addAccount;
     const r = await apiLogin(email, password);
     if (!r.ok || !r.data?.access_token) return { ok: false, error: r.error || "Login failed" };
-    const newAcc: StoredAccount = {
-      email: r.data.user?.email ?? email,
-      token: r.data.access_token,
-      user: r.data.user || null,
-    };
-    const accs = loadAccounts();
-    const exists = accs.some((a) => a.email === newAcc.email);
-    const next = exists ? accs.map((a) => (a.email === newAcc.email ? newAcc : a)) : [...accs, newAcc];
-    saveAccounts(next);
-    setAccounts(next);
-    applyAccount(newAcc);
-    return { ok: true };
+    return loginWithAccessToken(r.data.access_token);
   };
 
   const logout = () => {
@@ -185,7 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [applyAccount]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, switchingAccount, accounts, login, logout, switchAccount, logoutAccount, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, switchingAccount, accounts, login, loginWithAccessToken, logout, switchAccount, logoutAccount, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
