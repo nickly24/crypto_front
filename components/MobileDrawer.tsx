@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, LayoutDashboard, Settings, BarChart3, HelpCircle, Bookmark, LogOut, LineChart } from "lucide-react";
+import { X, LayoutGrid, Settings, BarChart3, HelpCircle, Bookmark, LogOut, LineChart } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { HeaderTickers } from "@/components/HeaderTickers";
 import { useAuth } from "@/providers/auth";
@@ -13,7 +13,7 @@ type Props = {
 };
 
 const nav = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Trade Control", icon: LayoutGrid },
   { href: "/trading", label: "Trading", icon: LineChart },
   { href: "/analytics", label: "Stats", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -66,7 +66,9 @@ export function MobileDrawer({ open, onClose }: Props) {
             </div>
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
               {nav.map(({ href, label, icon: Icon }) => {
-                const active = pathname === href;
+                const active =
+                  pathname === href ||
+                  (href === "/dashboard" && (pathname.startsWith("/dashboard/pair-trading") || pathname.startsWith("/dashboard/chart")));
                 return (
                   <Link
                     key={href}

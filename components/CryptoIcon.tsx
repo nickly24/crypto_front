@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 
-/** Extracts base symbol: "BTC-USDT-SWAP" -> "btc", "USDT" -> "usdt" */
+/** Extracts base symbol: "BTC-USDT-SWAP" -> "btc", "BTCUSDT" -> "btc", "USDT" -> "usdt" */
 function symbolToKey(symbol: string): string {
   const s = String(symbol || "").trim().toUpperCase();
   if (!s) return "";
+  if (!s.includes("-") && s.endsWith("USDT")) {
+    const base = s.slice(0, -4) || "usdt";
+    return base.toLowerCase();
+  }
   const base = s.replace(/-USDT-SWAP$/i, "").replace(/-USDT$/i, "").split("-")[0] || s;
   return base.toLowerCase();
 }
@@ -44,6 +48,7 @@ const COIN_ICONS: Record<string, string> = {
   wld: "31019/small/worldcoin.jpeg",
   floki: "16746/small/Floki.svg",
   bonk: "28600/small/bonk.jpg",
+  trx: "1094/small/Tron.png",
 };
 
 const CDN = "https://assets.coingecko.com/coins/images";

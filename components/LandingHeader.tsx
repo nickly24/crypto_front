@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { HelpCircle, LogIn, LayoutDashboard, Settings, BarChart3, Palette, Menu, X } from "lucide-react";
+import { HelpCircle, LogIn, LayoutGrid, Settings, BarChart3, Palette, Menu, X } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/providers/auth";
 
@@ -15,7 +15,7 @@ const publicNav = [
 ];
 
 const appNav = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Trade Control", icon: LayoutGrid },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/guide", label: "Guide", icon: null },
@@ -44,7 +44,9 @@ export function LandingHeader() {
           </Link>
           <nav className="hidden md:flex items-center gap-0.5">
             {nav.map(({ href, label, icon: Icon }) => {
-              const active = pathname === href;
+              const active =
+                pathname === href ||
+                (href === "/dashboard" && (pathname.startsWith("/dashboard/pair-trading") || pathname.startsWith("/dashboard/chart")));
               return (
                 <Link
                   key={href}
@@ -92,7 +94,7 @@ export function LandingHeader() {
               href="/dashboard"
               className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)]/18 text-[var(--accent)] border border-[var(--accent)]/35 hover:bg-[var(--accent)]/28 transition font-medium text-sm"
             >
-              Dashboard
+              Trade Control
             </Link>
           ) : (
             <Link

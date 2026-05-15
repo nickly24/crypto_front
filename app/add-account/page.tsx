@@ -38,7 +38,7 @@ export default function AddAccountPage() {
           className="inline-flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--foreground)] mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to dashboard
+          Back to Trade Control
         </Link>
         <h1 className="text-2xl font-semibold mb-2">Add account</h1>
         <p className="text-sm text-[var(--muted)] mb-6">Sign in with another account to switch between them</p>

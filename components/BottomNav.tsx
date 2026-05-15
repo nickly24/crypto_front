@@ -3,16 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
+  LayoutGrid,
   Settings,
   BarChart3,
   Bookmark,
   LineChart,
-  Code2,
 } from "lucide-react";
 
 const nav = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Trade Control", icon: LayoutGrid },
   { href: "/trading", label: "Trading", icon: LineChart },
   { href: "/analytics", label: "Stats", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -31,7 +30,9 @@ export function BottomNav() {
       }}
     >
       {nav.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href;
+        const active =
+          pathname === href ||
+          (href === "/dashboard" && (pathname.startsWith("/dashboard/pair-trading") || pathname.startsWith("/dashboard/chart")));
         return (
           <Link
             key={href}
