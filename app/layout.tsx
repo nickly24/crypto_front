@@ -4,10 +4,10 @@ import { ThemeProvider } from "@/providers/theme";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PairTrading Panel",
-  description: "PairTrading dashboard",
+  title: "Lyrae Labs",
+  description: "Lyrae Labs algorithmic trading platform",
   icons: {
-    icon: "/logo.ico",
+    icon: "/image-4.ico",
   },
 };
 

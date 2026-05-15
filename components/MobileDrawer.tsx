@@ -46,12 +46,8 @@ export function MobileDrawer({ open, onClose }: Props) {
             <div className="pt-[env(safe-area-inset-top)]" />
             <div className="p-4 border-b border-[var(--card-border)]">
               <div className="flex items-center justify-between">
-                <Link href="/dashboard" onClick={onClose} className="flex items-center gap-3">
-                  <Logo className="w-10 h-10" />
-                  <div className="flex flex-col leading-tight">
-                    <span className="font-bold text-lg tracking-tight text-[var(--foreground)]">PairTrading</span>
-                    <span className="text-[10px] text-[var(--muted)] font-medium uppercase tracking-widest">Platform</span>
-                  </div>
+                <Link href="/dashboard" onClick={onClose} className="block">
+                  <Logo className="h-14 w-[12rem]" />
                 </Link>
                 <button
                   onClick={onClose}

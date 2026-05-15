@@ -19,8 +19,8 @@ import {
 const pillars = [
   {
     icon: Split,
-    title: "Spread-first logic",
-    desc: "Signals are built around divergence between baskets, not a one-sided market bet.",
+    title: "Strategy-first logic",
+    desc: "Signals, automation, and execution rules are structured around repeatable systematic setups.",
   },
   {
     icon: ShieldCheck,
@@ -35,17 +35,17 @@ const pillars = [
 ];
 
 const systemCards = [
-  { icon: Layers3, title: "Basket builder", value: "Long / short sets", detail: "Pair groups, weights, thresholds" },
-  { icon: Gauge, title: "Signal engine", value: "Spread + z-score", detail: "Entry, exit, and reset conditions" },
+  { icon: Layers3, title: "Strategy builder", value: "Rules and structure", detail: "Setups, weights, thresholds" },
+  { icon: Gauge, title: "Signal engine", value: "Triggers + filters", detail: "Entry, exit, and reset conditions" },
   { icon: Bot, title: "Bot control", value: "Start / pause / close", detail: "One panel for runtime actions" },
   { icon: LineChart, title: "Analytics", value: "PnL history", detail: "Trades, win rate, exposure, timing" },
 ];
 
 const workflow = [
   "Connect an OKX API key with the permissions you choose.",
-  "Build baskets and set the exact spread threshold.",
+  "Build the strategy logic and define the exact trigger conditions.",
   "Define position size, leverage, take profit, and stop loss.",
-  "Launch the bot and watch execution, risk, and PnL in real time.",
+  "Launch the bot and track execution, risk, and PnL in real time.",
 ];
 
 export function LandingContent() {
@@ -62,11 +62,11 @@ export function LandingContent() {
         >
           <p className="mb-3 text-sm font-semibold uppercase text-[var(--accent)]">Execution stack</p>
           <h2 className="text-3xl font-semibold leading-tight tracking-normal text-[var(--foreground)] sm:text-4xl">
-            A trading desk for spreads, not another generic chart page.
+            An operating desk for algorithmic trading, not another generic chart page.
           </h2>
           <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted)]">
-            PairTrading brings the pieces that matter into one controlled interface: baskets, live spread behavior,
-            execution state, and portfolio risk.
+            Lyrae Labs brings the pieces that matter into one controlled interface: strategy logic, execution state,
+            portfolio risk, and analytics.
           </p>
         </motion.div>
 
@@ -105,7 +105,7 @@ export function LandingContent() {
                   Less noise. More control at the exact moment of execution.
                 </h2>
                 <p className="mt-4 max-w-xl text-base leading-7 text-slate-900/72">
-                  The value is disciplined automation, clear risk, and fast visibility when the spread reaches your
+                  The value is disciplined automation, clear risk, and fast visibility when the market reaches your
                   rules.
                 </p>
               </motion.div>
@@ -164,12 +164,12 @@ export function LandingContent() {
                 </div>
                 <h3 className="text-xl font-semibold text-slate-950">One operator surface for the full run.</h3>
                 <p className="mt-3 text-sm leading-6 text-slate-700">
-                  Basket structure, signal quality, control actions, and analytics sit in one visual rhythm instead of
-                  being split across exchange tabs and notes.
+                  Strategy structure, signal quality, control actions, and analytics sit in one visual rhythm instead
+                  of being split across exchange tabs and notes.
                 </p>
                 <div className="mt-6 space-y-3">
                   {[
-                    "Structure your long / short baskets before entry.",
+                    "Structure your strategy before entry.",
                     "See runtime controls without leaving the panel.",
                     "Read analytics in the same visual system as execution.",
                   ].map((item) => (
@@ -198,7 +198,7 @@ export function LandingContent() {
             <div className="absolute inset-10 bg-[var(--accent)]/12 blur-3xl" />
             <Image
               src="/landing/mobile-bot-mockup-cutout.png"
-              alt="Mobile bot control screen with pair list, risk mode, and compact PnL cards"
+              alt="Mobile bot control screen with strategy list, risk mode, and compact PnL cards"
               width={854}
               height={1842}
               className="relative w-full object-contain drop-shadow-[0_34px_80px_rgba(0,0,0,0.45)]"
@@ -215,7 +215,7 @@ export function LandingContent() {
               <Zap className="h-5 w-5" />
             </div>
             <h2 className="text-3xl font-semibold leading-tight tracking-normal text-[var(--foreground)] sm:text-4xl">
-              Start simple. Scale into a full pair-trading cockpit.
+              Start simple. Scale into a full algorithmic trading cockpit.
             </h2>
             <div className="mt-8 space-y-4">
               {workflow.map((item, i) => (
@@ -247,7 +247,7 @@ export function LandingContent() {
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-400">
               Connect API access, keep your rules explicit, and use the panel as the command center for automated
-              spread trading.
+              trading operations.
             </p>
           </div>
           <Link
@@ -262,7 +262,7 @@ export function LandingContent() {
 
       <footer className={`${shell} border-t border-[var(--card-border)] pt-6`}>
         <p className="text-center text-xs leading-6 text-[var(--muted)]">
-          © {new Date().getFullYear()} PairTrading. Spread trading involves risk.
+          © {new Date().getFullYear()} Lyrae Labs. Algorithmic trading involves risk.
         </p>
       </footer>
     </div>

@@ -21,8 +21,8 @@ type Section = {
 const SECTIONS: Section[] = [
   {
     id: "pair-trading",
-    title: "Pair trading",
-    caption: "Spread baskets & live bot",
+    title: "Market-neutral",
+    caption: "Relative-value strategy & live bot",
     file: "image.png",
     href: "/dashboard/pair-trading",
     Icon: GitBranch,
@@ -63,7 +63,7 @@ export function TradeFinalHub() {
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[var(--foreground)]">Trade Control</h1>
         <p className="text-sm md:text-base text-[var(--muted)] mt-2 max-w-2xl">
-          Choose your trading engine.
+          Choose your algorithmic trading engine.
         </p>
       </div>
 

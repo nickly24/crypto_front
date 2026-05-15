@@ -34,12 +34,8 @@ export function LandingHeader() {
         <div className="flex items-center gap-6 lg:gap-10 min-w-0">
           <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
             <div className="relative">
-              <div className="absolute inset-0 rounded-xl bg-[var(--accent)]/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-              <Logo className="relative w-9 h-9 sm:w-10 sm:h-10 transition-transform group-hover:scale-[1.03]" />
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="font-bold text-[15px] sm:text-base tracking-tight">PairTrading</span>
-              <span className="text-[10px] text-[var(--muted)] font-medium uppercase tracking-[0.2em]">Platform</span>
+              <div className="absolute inset-y-0 left-2 right-12 rounded-full bg-[var(--accent)]/18 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Logo className="relative h-12 w-[11rem] sm:w-[12rem] transition-transform group-hover:scale-[1.02]" />
             </div>
           </Link>
           <nav className="hidden md:flex items-center gap-0.5">

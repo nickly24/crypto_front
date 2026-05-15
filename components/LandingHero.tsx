@@ -39,7 +39,7 @@ export function LandingHero() {
             transition={{ duration: 0.5, delay: 0.04 }}
             className="mb-6 max-w-3xl text-4xl font-semibold leading-[1.04] tracking-normal text-[var(--foreground)] sm:text-5xl"
           >
-            Automate spread trading with controlled execution.
+            Automate algorithmic trading with controlled execution.
           </motion.h1>
 
           <motion.p
@@ -48,8 +48,7 @@ export function LandingHero() {
             transition={{ duration: 0.48, delay: 0.1 }}
             className="mb-8 max-w-xl text-base leading-7 text-[var(--muted)] sm:text-lg"
           >
-            Build baskets, define risk, and let the bot monitor divergence, hedge entries, and exits from a single
-            clean trading panel.
+            Build strategies, define risk, and manage signals, entries, and exits from a single clean trading panel.
           </motion.p>
 
           <motion.div
@@ -83,7 +82,7 @@ export function LandingHero() {
           <div className="absolute inset-6 bg-[var(--accent)]/12 blur-3xl" />
           <Image
             src="/landing/trading-dashboard-mockup-cutout.png"
-            alt="PairTrading dashboard with spread chart, bot execution timeline, and risk panels"
+            alt="Lyrae Labs dashboard with automated strategy controls, execution timeline, and risk panels"
             width={1619}
             height={972}
             priority

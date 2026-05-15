@@ -18,6 +18,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("lyrae-sidebar-collapsed") === "true";
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem("lyrae-sidebar-collapsed", String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     if (loading || user) return;
@@ -39,7 +47,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SubscriptionModalProvider onOpenChange={setSubscriptionModalOpen}>
-    <div className="min-h-screen flex bg-[var(--background)] relative">
+    <div className="h-screen overflow-hidden flex bg-[var(--background)] relative">
       {switchingAccount && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--background)]/80 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-4">
@@ -48,10 +56,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((prev) => !prev)} />
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 h-screen overflow-hidden">
         <Header onOpenDrawer={() => setDrawerOpen(true)} onOpenSubscription={() => setSubscriptionModalOpen(true)} />
-        <main className="flex-1 p-4 md:p-6 overflow-auto pb-28 md:pb-6">
+        <main className="flex-1 min-h-0 overflow-auto p-4 pb-28 md:p-6 md:pb-6">
           {subscriptionExpired ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
               <div className="flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/20 text-amber-500 mb-4">

@@ -492,7 +492,7 @@ function DashboardPageInner() {
           <ArrowLeft className="w-4 h-4 shrink-0" />
           Back to Trade Control
         </Link>
-        <p className="text-xs font-medium uppercase tracking-wider text-[var(--accent)]">Pair trading</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-[var(--accent)]">Market-neutral strategy</p>
       </div>
       <AnimatePresence>
         {botActionLoading && botActionLabel && (
@@ -510,8 +510,8 @@ function DashboardPageInner() {
 
       <div className="flex items-center justify-between gap-4 mb-4 md:mb-6">
         <div>
-          <h1 className="text-xl md:text-2xl font-semibold">Dashboard</h1>
-          <p className="text-sm text-[var(--muted)] mt-1">Pair baskets, spread, and bot for this strategy.</p>
+          <h1 className="text-xl md:text-2xl font-semibold">Strategy Dashboard</h1>
+          <p className="text-sm text-[var(--muted)] mt-1">Execution, risk, and bot controls for this strategy.</p>
         </div>
         <button
           onClick={() => setTourOpen(true)}

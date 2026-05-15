@@ -92,38 +92,76 @@ function resolveColors(appearance: AppearanceState): { accent: string; positive:
   return { accent, positive, negative };
 }
 
+function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
+  const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+  if (!m) return null;
+  const r = parseInt(m[1], 16) / 255;
+  const g = parseInt(m[2], 16) / 255;
+  const b = parseInt(m[3], 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+
+  if (d === 0) return { h: 0, s: 0, l };
+
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+
+  switch (max) {
+    case r:
+      h = (g - b) / d + (g < b ? 6 : 0);
+      break;
+    case g:
+      h = (b - r) / d + 2;
+      break;
+    default:
+      h = (r - g) / d + 4;
+      break;
+  }
+
+  h *= 60;
+  return { h, s, l };
+}
+
+function buildBrandMarkFilter(accentHex: string): string {
+  const normalizedAccent = accentHex.toLowerCase();
+  if (normalizedAccent === "#9ddb00") return "none";
+
+  const source = hexToHsl("#9ddb00");
+  const target = hexToHsl(normalizedAccent);
+  if (!source || !target) return "none";
+
+  const hueRotate = Math.round(target.h - source.h);
+  const saturation = (0.9 + target.s * 0.85).toFixed(2);
+  const brightness = (0.82 + target.l * 0.42).toFixed(2);
+
+  return `hue-rotate(${hueRotate}deg) saturate(${saturation}) brightness(${brightness}) contrast(1.04)`;
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [appearance, setAppearanceState] = useState<AppearanceState>({
-    baseTheme: "dark",
-    presetId: "green-lime",
-    customAccent: null,
-    customColors: null,
-  });
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    const storedTheme = localStorage.getItem(STORAGE_THEME) as BaseTheme | null;
-    const a = loadAppearance();
-    if (storedTheme === "light" || storedTheme === "dark") {
-      a.baseTheme = storedTheme;
-    } else if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: light)").matches) {
-      a.baseTheme = "light";
+  const [appearance, setAppearanceState] = useState<AppearanceState>(() => {
+    const initial = loadAppearance();
+    if (typeof window !== "undefined") {
+      const storedTheme = localStorage.getItem(STORAGE_THEME) as BaseTheme | null;
+      if (storedTheme === "light" || storedTheme === "dark") {
+        initial.baseTheme = storedTheme;
+      } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+        initial.baseTheme = "light";
+      }
     }
-    setAppearanceState(a);
-    setMounted(true);
-  }, []);
+    return initial;
+  });
 
   useEffect(() => {
-    if (!mounted) return;
     document.documentElement.setAttribute("data-theme", appearance.baseTheme);
     localStorage.setItem(STORAGE_THEME, appearance.baseTheme);
     localStorage.setItem(STORAGE_APPEARANCE, JSON.stringify(appearance));
-  }, [appearance, mounted]);
+  }, [appearance]);
 
   const colors = resolveColors(appearance);
 
   useEffect(() => {
-    if (!mounted) return;
     const root = document.documentElement;
     const accentRgba = (hex: string, a: number) => {
       const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
@@ -136,7 +174,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty("--negative", colors.negative);
     root.style.setProperty("--sidebar-active-bg", accentRgba(colors.accent, 0.12));
     root.style.setProperty("--sidebar-active-text", colors.accent);
-  }, [mounted, colors]);
+    root.style.setProperty("--brand-mark-filter", buildBrandMarkFilter(colors.accent));
+  }, [colors]);
 
   const setTheme = useCallback((t: BaseTheme) => {
     setAppearanceState((a) => ({ ...a, baseTheme: t }));
