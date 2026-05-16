@@ -44,6 +44,16 @@ export async function login(email: string, password: string) {
   );
 }
 
+export async function loginWithLyraeKey(key: string) {
+  return api<{ access_token: string; user: { id: number; email: string; role: string } & SubscriptionData }>(
+    "/api/auth/lyrae",
+    {
+      method: "POST",
+      body: JSON.stringify({ key }),
+    }
+  );
+}
+
 export async function loginWithGoogleCredential(credential: string) {
   return api<{ access_token: string; user: { id: number; email: string; role: string } & SubscriptionData }>(
     "/api/auth/google",
@@ -241,6 +251,25 @@ export async function saveOkxKeys(data: {
     method: "PUT",
     body: JSON.stringify(data),
   });
+}
+
+export type LyraeKeyStatus = {
+  has_key: boolean;
+  public_id?: string;
+  created_at?: string | null;
+  last_used_at?: string | null;
+};
+
+export async function getLyraeKey() {
+  return api<LyraeKeyStatus>("/api/profile/lyrae-key");
+}
+
+export async function createLyraeKey() {
+  return api<{ key: string; public_id: string }>("/api/profile/lyrae-key", { method: "POST" });
+}
+
+export async function deleteLyraeKey() {
+  return api<{ deleted: boolean }>("/api/profile/lyrae-key", { method: "DELETE" });
 }
 
 export type BotConfigData = {

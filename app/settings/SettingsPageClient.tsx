@@ -11,6 +11,10 @@ import {
   updateBotConfig,
   resetBotConfig,
   getInstruments,
+  getLyraeKey,
+  createLyraeKey,
+  deleteLyraeKey,
+  type LyraeKeyStatus,
 } from "@/lib/api";
 import {
   Key,
@@ -24,6 +28,8 @@ import {
   X,
   Pencil,
   Palette,
+  KeyRound,
+  Copy,
 } from "lucide-react";
 import { CryptoIcon } from "@/components/CryptoIcon";
 import { AppearanceSettingsPanel } from "@/components/AppearanceSettingsPanel";
@@ -35,7 +41,7 @@ type BotConfigData = {
   error_handling?: Record<string, string | number | boolean>;
 };
 
-type SettingsSection = "api" | "trading" | "appearance";
+type SettingsSection = "api" | "access" | "trading" | "appearance";
 
 const paramDefs: Array<{
   key: string;
@@ -64,6 +70,7 @@ const SETTINGS_SECTIONS: {
   Icon: typeof Key;
 }[] = [
   { id: "api", label: "API & exchange", hint: "OKX keys", Icon: Key },
+  { id: "access", label: "Access", hint: "Lyrae Key", Icon: KeyRound },
   { id: "trading", label: "Trading bot", hint: "Pairs & parameters", Icon: Layers },
   { id: "appearance", label: "Theme", hint: "Colors & mode", Icon: Palette },
 ];
@@ -156,7 +163,7 @@ export function SettingsPageClient() {
   const router = useRouter();
   const rawSection = searchParams.get("section");
   const section: SettingsSection =
-    rawSection === "trading" || rawSection === "appearance" ? rawSection : "api";
+    rawSection === "access" || rawSection === "trading" || rawSection === "appearance" ? rawSection : "api";
 
   const goSection = (s: SettingsSection) => {
     router.replace(`/settings?section=${s}`, { scroll: false });
@@ -169,6 +176,9 @@ export function SettingsPageClient() {
   } | null>(null);
   const [config, setConfig] = useState<BotConfigData | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
+  const [lyraeKey, setLyraeKey] = useState<LyraeKeyStatus | null>(null);
+  const [issuedLyraeKey, setIssuedLyraeKey] = useState<string | null>(null);
+  const [lyraeBusy, setLyraeBusy] = useState(false);
 
   const [apiKey, setApiKey] = useState("");
   const [secretKey, setSecretKey] = useState("");
@@ -184,6 +194,17 @@ export function SettingsPageClient() {
   const [savingConfig, setSavingConfig] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
+  function syncEditState(c: BotConfigData) {
+    setEditParams({ ...c.params });
+    const strings: Record<string, string> = {};
+    for (const [k, v] of Object.entries(c.params)) {
+      if (typeof v === "number") strings[k] = String(v);
+    }
+    setEditParamStrings(strings);
+    setEditModes({ ...c.modes });
+    setEditBaskets(c.baskets.map((b) => ({ ...b })));
+  }
+
   const loadConfig = useCallback(() => {
     getBotConfig().then((r) => {
       if (r.ok && r.data) {
@@ -197,19 +218,9 @@ export function SettingsPageClient() {
     });
   }, []);
 
-  function syncEditState(c: BotConfigData) {
-    setEditParams({ ...c.params });
-    const strings: Record<string, string> = {};
-    for (const [k, v] of Object.entries(c.params)) {
-      if (typeof v === "number") strings[k] = String(v);
-    }
-    setEditParamStrings(strings);
-    setEditModes({ ...c.modes });
-    setEditBaskets(c.baskets.map((b) => ({ ...b })));
-  }
-
   useEffect(() => {
     getOkxKeys().then((r) => r.ok && r.data && setOkxKeys(r.data));
+    getLyraeKey().then((r) => r.ok && r.data && setLyraeKey(r.data));
     loadConfig();
   }, [loadConfig]);
 
@@ -227,6 +238,32 @@ export function SettingsPageClient() {
       setPassphrase("");
       getOkxKeys().then((res) => res.ok && res.data && setOkxKeys(res.data));
     }
+  }
+
+  async function handleCreateLyraeKey() {
+    setLyraeBusy(true);
+    const r = await createLyraeKey();
+    setLyraeBusy(false);
+    if (r.ok && r.data) {
+      setIssuedLyraeKey(r.data.key);
+      getLyraeKey().then((res) => res.ok && res.data && setLyraeKey(res.data));
+    }
+  }
+
+  async function handleDeleteLyraeKey() {
+    if (!confirm("Revoke this Lyrae Key? The printed card will stop working.")) return;
+    setLyraeBusy(true);
+    const r = await deleteLyraeKey();
+    setLyraeBusy(false);
+    if (r.ok) {
+      setIssuedLyraeKey(null);
+      setLyraeKey({ has_key: false });
+    }
+  }
+
+  async function handleCopyIssuedKey() {
+    if (!issuedLyraeKey) return;
+    await navigator.clipboard.writeText(issuedLyraeKey);
   }
 
   function startEditing() {
@@ -316,6 +353,8 @@ export function SettingsPageClient() {
   const sectionSubtitle =
     section === "api"
       ? "Connect and manage OKX API keys"
+      : section === "access"
+        ? "Issue and manage your physical Lyrae Key"
       : section === "trading"
         ? "Trading pairs, risk parameters, and modes"
         : "Light or dark mode, presets, and custom colors";
@@ -413,6 +452,68 @@ export function SettingsPageClient() {
                 <Save className="w-4 h-4" />
                 {savingKeys ? "Saving..." : "Save keys"}
               </button>
+            </motion.div>
+          )}
+
+          {section === "access" && (
+            <motion.div {...anim(0)} className="card-glass rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/15 flex items-center justify-center">
+                  <KeyRound className="w-5 h-5 text-[var(--accent)]" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-[var(--foreground)]">Lyrae Key</h2>
+                  <p className="text-xs text-[var(--muted)]">One active physical access key per account</p>
+                </div>
+              </div>
+
+              {lyraeKey?.has_key ? (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-[var(--card-border)] bg-[var(--background)]/50 p-4">
+                    <p className="text-xs text-[var(--muted)] mb-1">Active key</p>
+                    <p className="font-mono text-sm text-[var(--foreground)]">ID {lyraeKey.public_id}</p>
+                    <p className="mt-2 text-xs text-[var(--muted)]">
+                      Last used: {lyraeKey.last_used_at ? new Date(lyraeKey.last_used_at).toLocaleString() : "never"}
+                    </p>
+                  </div>
+                  {issuedLyraeKey && (
+                    <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 p-4">
+                      <p className="text-sm font-medium text-amber-500">Save this now</p>
+                      <p className="mt-1 text-xs text-[var(--muted)]">
+                        The raw Lyrae Key is shown only once. This is the value to encode into the card QR.
+                      </p>
+                      <div className="mt-3 flex gap-2">
+                        <code className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-[var(--background)] px-3 py-2 text-xs">
+                          {issuedLyraeKey}
+                        </code>
+                        <button onClick={handleCopyIssuedKey} className="rounded-lg border border-[var(--card-border)] px-3 hover:bg-[var(--sidebar-hover)]">
+                          <Copy className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleDeleteLyraeKey}
+                    disabled={lyraeBusy}
+                    className="rounded-xl bg-[var(--negative)]/15 px-4 py-2.5 text-sm font-medium text-[var(--negative)] hover:bg-[var(--negative)]/25 disabled:opacity-50"
+                  >
+                    {lyraeBusy ? "Working..." : "Revoke key"}
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <p className="mb-4 text-sm text-[var(--muted)]">
+                    Issue a Lyrae Key, then place the returned value into the QR code on the physical card.
+                  </p>
+                  <button
+                    onClick={handleCreateLyraeKey}
+                    disabled={lyraeBusy}
+                    className="rounded-xl bg-[var(--accent)] px-4 py-3 font-semibold text-[var(--background)] hover:opacity-90 disabled:opacity-50"
+                  >
+                    {lyraeBusy ? "Issuing..." : "Issue Lyrae Key"}
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
 

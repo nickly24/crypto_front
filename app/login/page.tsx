@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { SocialAuthButtons } from "@/components/SocialAuthButtons";
+import { KeyRound } from "lucide-react";
 
 export default function LoginPage() {
   const { user, loading, login } = useAuth();
@@ -78,9 +78,23 @@ export default function LoginPage() {
             {submitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
-        <div className="mt-6">
-          <SocialAuthButtons mode="login" />
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[var(--card-border)]" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-[var(--card-bg)] px-3 text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
+              Or continue with
+            </span>
+          </div>
         </div>
+        <Link
+          href="/login/lyrae"
+          className="flex w-full items-center justify-center gap-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-4 py-3 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--accent)]/15"
+        >
+          <KeyRound className="h-5 w-5 text-[var(--accent)]" />
+          Sign in with Lyrae Key
+        </Link>
         <p className="mt-6 text-sm text-[var(--muted)] text-center">
           New here?{" "}
           <Link href="/register" className="text-[var(--accent)] hover:underline">

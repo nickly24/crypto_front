@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { SocialAuthButtons } from "@/components/SocialAuthButtons";
 
 export default function RegisterPage() {
   return (
@@ -14,11 +13,9 @@ export default function RegisterPage() {
         className="card-glass p-8 w-full max-w-md"
       >
         <h1 className="text-2xl font-semibold mb-2">Create account</h1>
-        <p className="text-sm text-[var(--muted)] mb-6">
-          Continue with Google or Telegram and we&apos;ll create your account automatically.
+        <p className="text-sm text-[var(--muted)]">
+          Account creation is temporarily unavailable.
         </p>
-
-        <SocialAuthButtons mode="register" />
 
         <p className="mt-6 text-sm text-[var(--muted)] text-center">
           Already have an account?{" "}
